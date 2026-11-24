@@ -1,0 +1,940 @@
+<!DOCTYPE html>
+<html lang="en-AU">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>NDIS Plan Tracker</title>
+<style>
+:root{--bg:#faf5ff;--card:#fff;--tx:#2a1f3d;--mu:#7b6f8e;--bd:#eddcf7;--ac:#8b3fd9;--acx:#fff;--ok:#16a34a;--bad:#dc2626;--bar:#e6ebf2;color-scheme:light;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+@media(prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0f141b;--card:#18202a;--tx:#e8edf3;--mu:#97a3b3;--bd:#2a3441;--ac:#c18bd0;--acx:#1a0b1e;--ok:#4ade80;--bad:#f87171;--bar:#2a3441;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#0f141b;--card:#18202a;--tx:#e8edf3;--mu:#97a3b3;--bd:#2a3441;--ac:#c18bd0;--acx:#1a0b1e;--ok:#4ade80;--bad:#f87171;--bar:#2a3441;color-scheme:dark}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--tx);font:16px/1.45 system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;padding:14px 14px 90px;max-width:640px;margin-inline:auto}
+h1{font-size:27px;font-weight:800;margin:4px 0 14px}
+.card{background:var(--card);border:2px solid var(--bd);border-radius:22px;padding:16px;margin-bottom:14px;box-shadow:0 6px 18px rgba(139,63,217,.10)}
+.hero{background:linear-gradient(135deg,#8b3fd9,#ec4899 60%,#f59e0b);color:#fff;border:0;box-shadow:0 10px 24px rgba(236,72,153,.35)}
+.hero .big{font-size:40px;font-weight:800;line-height:1.15}
+.sec{font-size:12px;text-transform:uppercase;letter-spacing:.05em;color:var(--mu);font-weight:600;margin:12px 0 6px}
+.hero .sec{color:inherit;opacity:.85;margin:0}
+.ttl{font-weight:700;font-size:17px}
+.sm{font-size:13px;color:var(--mu)}
+.hint{font-size:13px;color:var(--mu);margin:8px 0 0}
+.row{margin:6px 0}
+.row .t{display:flex;justify-content:space-between;gap:8px;font-size:14px}
+.track{height:14px;border-radius:10px;background:var(--bar);overflow:hidden;margin-top:5px}
+.fill{height:100%;background:linear-gradient(90deg,#8b3fd9,#ec4899);border-radius:10px;transition:width .6s}
+.over .fill{background:var(--bad)}.over .rem{color:var(--bad)}
+.rem{color:var(--ok);font-weight:600;white-space:nowrap}
+.ln{border-top:1px solid var(--bd);padding-top:10px;margin-top:10px}
+label{display:block;font-size:13px;color:var(--mu);margin:10px 0 3px}
+input,select,textarea{width:100%;font:inherit;padding:10px;border:1px solid var(--bd);border-radius:10px;background:var(--bg);color:var(--tx)}
+button{font:inherit;border:0;border-radius:16px;padding:12px 16px;background:linear-gradient(135deg,#8b3fd9,#ec4899);color:#fff;font-weight:700;cursor:pointer;transition:transform .1s}button:active{transform:scale(.95)}
+button.sec2{background:var(--bar);color:var(--tx)}
+button.x{background:transparent;color:var(--mu);padding:6px 8px}
+button.full{width:100%;margin-top:14px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.inv{display:grid;grid-template-columns:1fr auto auto;gap:10px;align-items:center;padding:10px 0;border-top:1px solid var(--bd)}
+.r{text-align:right}
+details.acc>summary{display:flex;justify-content:space-between;align-items:center;gap:10px;cursor:pointer;list-style:none;min-height:44px}details.acc>summary::-webkit-details-marker{display:none}.chev{font-size:20px;color:var(--ac);transition:transform .2s}details[open]>summary .chev{transform:rotate(180deg)}details.acc[open]>summary{margin-bottom:6px}
+details.acc:not([open])>summary .chev{transform:rotate(-90deg)}details.acc:not(.scr):active{transform:scale(.98)}details.scr>summary .chev{display:none}details.scr>summary{cursor:default}details.scr>summary .ttl{font-size:21px}button.back{margin-bottom:12px;padding:9px 16px}
+.pick{display:flex;flex-direction:column;align-items:flex-start;gap:2px;width:100%;margin:5px 0;text-align:left;background:var(--bg);color:var(--tx);border:2px solid var(--bd);font-weight:400}.pick.on{border-color:var(--ac);background:var(--bar)}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}.stats b{display:block;font-size:19px}.neg{color:var(--bad)}
+.hs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:14px}.hs b{display:block;font-size:20px}.hs .sec{margin:0 0 2px}
+#msg{font-size:13px;color:var(--bad);min-height:18px;margin-top:8px}
+nav{position:fixed;left:0;right:0;bottom:0;display:flex;background:var(--card);border-top:1px solid var(--bd);padding-bottom:env(safe-area-inset-bottom,0px)}
+nav button{flex:1;background:transparent;color:var(--mu);border-radius:0;padding:14px 4px;font-size:14px}
+nav button.on{color:var(--ac);font-weight:800}nav button span{display:block;font-size:22px}
+</style>
+</head>
+<body>
+<main id="app"></main>
+<nav><button data-tab="sum"><span>🌈</span>Summary</button><button data-tab="inv"><span>🧾</span>Invoices</button><button data-tab="plan"><span>⚙️</span>Plan</button><button data-tab="about"><span>ℹ️</span>About</button></nav>
+<script>
+function rep(n,v){return Array(n).fill(v)}
+function seed(){return {
+plan:{start:'2026-05-14',end:'2029-05-13'},
+comps:[
+{id:'cf',name:'Core Flexible (plan-managed)',months:3,amts:rep(12,12764.2)},
+{id:'cc',name:'Choice and Control (plan management)',months:1,amts:rep(36,104.45)},
+{id:'dl',name:'Improved Daily Living Skills',months:6,amts:[23607.87,23607.87,12735.39,12735.39,4013.4,1685.52]},
+{id:'sc',name:'Support Coordination',months:12,amts:[3004.2,1201.68,1201.68]},
+{id:'rt',name:'Recurring Transport (self-managed)',months:12,amts:[1189.34,1189.33,1189.33]}],
+lines:[
+{id:'l1',comp:'cf',name:'Self-care – Saturday',rate:98.83,total:10278.32},
+{id:'l2',comp:'cf',name:'Self-care – Sunday',rate:127.43,total:13252.72},
+{id:'l3',comp:'cf',name:'Personal domestic activities',rate:59.06,total:46066.8},
+{id:'l4',comp:'cf',name:'Household tasks',rate:58.03,total:5570.88},
+{id:'l5',comp:'cf',name:'Group activities – Saturday (1:2)',rate:49.42,total:19570.32},
+{id:'l6',comp:'cf',name:'Community access – weekday',rate:70.23,total:58431.36},
+{id:'l7',comp:'cc',name:'Plan management monthly fee',rate:0,total:3760.2},
+{id:'l8',comp:'dl',name:'Occupational therapist',rate:193.99,total:17459.1},
+{id:'l9',comp:'dl',name:'Psychologist',rate:232.99,total:6989.7},
+{id:'l10',comp:'dl',name:'Daily planning and budgeting',rate:70.23,total:16855.2},
+{id:'l11',comp:'dl',name:'Skill development and training',rate:70.23,total:37081.44},
+{id:'l12',comp:'sc',name:'Support coordination level 2',rate:100.14,total:5407.56},
+{id:'l13',comp:'rt',name:'Recurring transport',rate:0,total:3568}],
+inv:[]}}
+var FSEL=null,OPEN={hours:1,log:1,add:1,hist:1},scr=null,S=seed(),tab='sum',pend=null,lastLine='',timer=null;
+var $=function(s){return document.querySelector(s)};
+var uid=function(){return Math.random().toString(36).slice(2,9)};
+var pd=function(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2])};
+var fd=function(d){return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')};
+var today=function(){var n=new Date();return new Date(n.getFullYear(),n.getMonth(),n.getDate())};
+var addD=function(d,n){return new Date(d.getFullYear(),d.getMonth(),d.getDate()+n)};
+function addM(d,n){var m=d.getMonth()+n,dim=new Date(d.getFullYear(),m+1,0).getDate();return new Date(d.getFullYear(),m,Math.min(d.getDate(),dim))}
+var money=function(n){return (n<0?'-':'')+'$'+Math.abs(n||0).toLocaleString('en-AU',{minimumFractionDigits:2,maximumFractionDigits:2})};
+var hrs=function(n){return (Math.round((n||0)*100)/100)+' h'};
+var show=function(d){return d.toLocaleDateString('en-AU',{day:'numeric',month:'short',year:'2-digit'})};
+var esc=function(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})};
+var sum=function(a){return a.reduce(function(x,y){return x+y},0)};
+
+function periods(c){var ps=pd(S.plan.start);return c.amts.map(function(a,k){return {s:addM(ps,k*c.months),e:addD(addM(ps,(k+1)*c.months),-1)}})}
+function curIdx(c,t){var P=periods(c),k=0;P.forEach(function(p,i){if(p.s<=t)k=i});return k}
+function used(l,from,to){var h=0,a=0;S.inv.forEach(function(i){if(i.line!==l.id)return;var d=pd(i.date);if((!from||d>=from)&&(!to||d<=to)){h+=+i.hours||0;a+=+i.amt||0}});return {h:h,a:a}}
+function cused(c,from,to){var a=0;S.lines.forEach(function(l){if(l.comp===c.id)a+=used(l,from,to).a});return a}
+function bar(label,u,lim,f){
+  var rem=lim-u,pct=lim>0?Math.max(0,Math.min(100,u/lim*100)):(u>0?100:0);
+  return '<div class="row'+(rem<-0.005?' over':'')+'"><div class="t"><span>'+label+' <b>'+f(u)+'</b> of '+f(lim)+'</span><span class="rem">'+(rem>=-0.005?f(rem)+' left':f(-rem)+' over')+'</span></div><div class="track"><div class="fill" style="width:'+pct+'%"></div></div></div>';
+}
+
+var EM={cf:'🏠',cc:'🧾',dl:'🌱',sc:'🧭',rt:'🚌'};
+var PGC='',PGNEW=[];
+var isGen=function(l){return /– general$/.test(l.name||'')};
+function ltotal(l){
+  if(!isGen(l))return +l.total||0;
+  var c=S.comps.find(function(x){return x.id===l.comp});if(!c)return +l.total||0;
+  var other=0;S.lines.forEach(function(x){if(x!==l&&x.comp===l.comp&&!isGen(x))other+=+x.total||0});
+  return Math.max(0,sum(c.amts)-other);
+}
+function cstat(c,t){
+  var P=periods(c),k=curIdx(c,t),p=P[k],n=c.amts.length,tt=sum(c.amts),prev=sum(c.amts.slice(0,k)),before=cused(c,null,addD(p.s,-1)),inP=cused(c,p.s,p.e),all=cused(c),roll=prev-before,avail=c.amts[k]+roll;
+  return {k:k,p:p,n:n,tt:tt,prev:prev,inP:inP,all:all,roll:roll,avail:avail,pl:avail-inP,wl:tt-all,left:n-k};
+}
+function lstat(c,cs,l){
+  var tt=cs.tt,tot=ltotal(l),k=cs.k,p=cs.p,u=used(l),ui=used(l,p.s,p.e),ub=used(l,null,addD(p.s,-1)),r={tot:tot,u:u,ui:ui,alloc:0,roll:0};
+  if(tt>0){r.alloc=tot*c.amts[k]/tt;r.roll=tot*cs.prev/tt-ub.a}
+  r.mAvail=r.alloc+r.roll;r.mpl=r.mAvail-ui.a;r.mwl=tot-u.a;
+  if(+l.rate){var th=tot/l.rate;r.th=th;r.hk=tt>0?th*c.amts[k]/tt:0;r.hr=tt>0?th*cs.prev/tt-ub.h:0;r.hAvail=r.hk+r.hr;r.hpl=r.hAvail-ui.h;r.hwl=th-u.h}
+  return r;
+}
+function lf(v,f){return v<-0.005?'<span class="neg">'+f(-v)+' over</span>':f(Math.max(0,v))+' left'}
+function ng(v,f){return v<-0.005?'<b class="neg">'+f(v)+'</b>':'<b>'+f(Math.max(0,v))+'</b>'}
+function totals(t){
+  var T={pl:0,wl:0,tot:0,used:0,hpl:0,hwl:0,hasH:false,cats:[]};
+  S.comps.forEach(function(c){
+    var cs=cstat(c,t);if(!cs.tt)return;
+    var ch={c:c,cs:cs,hpl:0,hwl:0,hasH:false};
+    S.lines.forEach(function(l){if(l.comp!==c.id||!(+l.rate))return;var ls=lstat(c,cs,l);ch.hpl+=ls.hpl;ch.hwl+=ls.hwl;ch.hasH=true});
+    T.pl+=cs.pl;T.wl+=cs.wl;T.tot+=cs.tt;T.used+=cs.all;T.hpl+=ch.hpl;T.hwl+=ch.hwl;if(ch.hasH)T.hasH=true;
+    T.cats.push(ch);
+  });
+  return T;
+}
+function allocText(cid){
+  var c=S.comps.find(function(x){return x.id===cid});if(!c)return '';
+  var tt=sum(c.amts),al=0;S.lines.forEach(function(l){if(l.comp===cid&&!isGen(l))al+=+l.total||0});
+  var un=tt-al;if(Math.abs(un)<0.005)un=0;
+  return 'Funding '+money(tt)+' · allocated to items '+money(al)+' · '+(un<-0.005?'<span class="neg">over by '+money(-un)+'</span>':money(un)+' unallocated');
+}
+function itemBlock(l,ls){
+  var r='<div class="ln"><b>'+esc(l.name)+'</b>'+((l.code||+l.rate)?'<div class="sm">'+(l.code?esc(l.code):'')+(l.code&&+l.rate?' · ':'')+(+l.rate?'max '+money(l.rate)+'/h':'')+'</div>':'');
+  r+=partsHtml(l);
+  r+='<div class="sm">Allocated '+money(ls.tot)+' over the plan · '+money(ls.alloc)+' this period'+(Math.abs(ls.roll)>0.004?' '+(ls.roll<0?'−':'+')+' '+money(Math.abs(ls.roll))+' rollover':'')+'</div>';
+  r+=bar('This period · money',ls.ui.a,ls.mAvail,money);
+  if(ls.th!==undefined)r+=bar('This period · hours',ls.ui.h,ls.hAvail,hrs);
+  r+=bar('Whole plan · money',ls.u.a,ls.tot,money);
+  if(ls.th!==undefined)r+=bar('Whole plan · hours',ls.u.h,ls.th,hrs);
+  return r+'</div>';
+}
+function invFeedback(line,date,h,amt){
+  var m=$('#msg'),ln=S.lines.find(function(x){return x.id===line}),c=ln&&S.comps.find(function(x){return x.id===ln.comp});
+  if(!m||!ln||!c)return;
+  var cs=cstat(c,pd(date)),ls=lstat(c,cs,ln);
+  m.style.color='var(--tx)';
+  m.innerHTML='<b style="color:var(--ok)">Invoice added 🎉</b><br>Deducted '+money(amt)+(h?' and '+hrs(h):'')+' from '+esc((ln.code?ln.code+' – ':'')+ln.name)+'.<br>'+esc(c.name)+' · period '+(cs.k+1)+' ('+show(cs.p.s)+' – '+show(cs.p.e)+'): '+lf(cs.pl,money)+' this period · '+lf(cs.wl,money)+' in the plan.<br>This item: '+lf(ls.mpl,money)+' this period · '+lf(ls.mwl,money)+' in the plan'+(ls.th!==undefined?'<br>Hours: '+lf(ls.hpl,hrs)+' this period · '+lf(ls.hwl,hrs)+' in the plan':'')+'.';
+}
+function hoursCard(t){
+  var T=totals(t),rows='',any=false;
+  T.cats.forEach(function(ch){
+    if(!ch.hasH)return;any=true;
+    rows+='<div class="inv" style="padding:10px 0 4px"><div><b>'+(EM[ch.c.id]||'⭐')+' '+esc(ch.c.name)+'</b><div class="sm">period ends '+show(ch.cs.p.e)+'</div></div><div class="r"><b>'+hrs(ch.hpl)+'</b></div><div class="r"><b>'+hrs(ch.hwl)+'</b></div></div>';
+    S.lines.forEach(function(l){if(l.comp!==ch.c.id||!(+l.rate))return;var ls=lstat(ch.c,ch.cs,l);
+      rows+='<div class="inv" style="border:0;padding:2px 0 2px 12px"><div class="sm">'+esc(l.name)+(l.code?' · '+esc(l.code):'')+'</div><div class="r sm">'+hrs(ls.hpl)+'</div><div class="r sm">'+hrs(ls.hwl)+'</div></div>'});
+  });
+  if(any)rows+='<div class="inv" style="padding:10px 0 4px"><div><b>Total hours left</b></div><div class="r"><b>'+hrs(T.hpl)+'</b></div><div class="r"><b>'+hrs(T.hwl)+'</b></div></div>';
+  return '<details class="card acc" data-o="hours"'+(OPEN.hours?' open':'')+'><summary><span class="ttl">⏰ Hours remaining</span><span class="chev">▾</span></summary>'+(any?'<div class="inv" style="border:0;padding:6px 0 0"><span class="sm">Support</span><span class="sm r">This period</span><span class="sm r">Whole plan</span></div>'+rows:'<p class="hint">Set a rate on a support to track its hours.</p>')+'</details>';
+}
+function sumView(){
+  var t=today(),T=totals(t);
+  var h='<h1>✨ My NDIS Plan</h1><button class="x" data-act="about" style="margin:-8px 0 8px;padding:6px 0;font-size:13px">Version '+VERSION+' ›</button>';
+  h+='<div class="card hero"><div class="sec">💰 Whole plan remaining</div><div class="big">'+money(T.tot-T.used)+'</div><div>'+money(T.used)+' used of '+money(T.tot)+(S.plan.end?' · ends '+show(pd(S.plan.end)):'')+'</div>'+
+    '<div class="hs"><div><div class="sec">Left this pay period</div><b>'+money(T.pl)+'</b></div>'+(T.hasH?'<div><div class="sec">Hours this pay period</div><b>'+hrs(T.hpl)+'</b></div><div><div class="sec">Hours left in plan</div><b>'+hrs(T.hwl)+'</b></div>':'')+'</div></div>';
+  if(!S.plan.start||!S.comps.length)return h+'<div class="card"><div class="ttl">Set up your plan</div><p class="hint">Open the Plan tab, set your plan dates, then add each funding and its support lines, or import a plan file.</p></div>';
+  h+=hoursCard(t);
+  T.cats.forEach(function(ch){
+    var c=ch.c,cs=ch.cs,items=S.lines.filter(function(l){return l.comp===c.id}),al=0;
+    items.forEach(function(l){al+=ltotal(l)});
+    h+='<details class="card acc" data-o="c'+c.id+'"'+(OPEN['c'+c.id]?' open':'')+'><summary><span style="flex:1;min-width:0"><span class="ttl">'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</span><div class="sm">Period '+(cs.k+1)+' of '+cs.n+' · '+show(cs.p.s)+' – '+show(cs.p.e)+'</div><div class="stats"><div><span class="sm">Left this period</span>'+ng(cs.pl,money)+'</div><div><span class="sm">Left in plan</span>'+ng(cs.wl,money)+'</div></div>'+(ch.hasH?'<div class="sm" style="margin-top:6px">⏰ '+hrs(ch.hpl)+' this period · '+hrs(ch.hwl)+' in plan</div>':'')+'</span><span class="chev">▾</span></summary>';
+    h+='<div class="sec">This period</div>'+bar('Money',cs.inP,cs.avail,money);
+    h+='<p class="hint">'+money(c.amts[cs.k])+' allocated '+(cs.roll<0?'−':'+')+' '+money(Math.abs(cs.roll))+' '+(cs.roll<0?'overspent in earlier periods':'rolled over')+'</p>';
+    h+='<div class="sec">Rest of plan</div>'+bar('Money',cs.all,cs.tt,money);
+    h+='<p class="hint">'+cs.left+' period'+(cs.left>1?'s':'')+' left including this one · about '+money(Math.max(0,(cs.tt-cs.all)/cs.left))+' per period to spread it evenly</p>';
+    var groups={},order=[];
+    items.forEach(function(l){var k=l.cat||'';if(!groups[k]){groups[k]=[];order.push(k)}groups[k].push(l)});
+    order.sort(function(a,b){return a.localeCompare(b)});
+    order.forEach(function(k){
+      var gm={pl:0,wl:0,hpl:0,hwl:0,hasH:false},blocks=groups[k].map(function(l){var ls=lstat(c,cs,l);gm.pl+=ls.mpl;gm.wl+=ls.mwl;if(ls.th!==undefined){gm.hpl+=ls.hpl;gm.hwl+=ls.hwl;gm.hasH=true}return itemBlock(l,ls)}).join('');
+      if(k||order.length>1)h+='<div class="sec">'+esc(k||'Other items')+'</div><div class="sm">Left this period '+money(gm.pl)+' · Left in plan '+money(gm.wl)+(gm.hasH?' · '+hrs(gm.hpl)+' / '+hrs(gm.hwl)+' hours':'')+'</div>';
+      h+=blocks;
+    });
+    if(items.length&&Math.abs(al-cs.tt)>0.5)h+='<p class="hint">Item allocations add up to '+money(al)+' of '+money(cs.tt)+' funding ('+(al>cs.tt?'<span class="neg">over by '+money(al-cs.tt)+'</span>':money(cs.tt-al)+' unallocated')+'). Adjust them in the Plan tab.</p>';
+    h+='</details>';
+  });
+  return h+'<p class="hint">Hours per item are spread across funding periods in proportion to the money in each period. Adjust items in the Plan tab.</p>';
+}
+
+function invView(){
+  var opts=S.comps.map(function(c){var ls=S.lines.filter(function(l){return l.comp===c.id});return ls.length?'<optgroup label="'+esc(c.name)+'">'+ls.map(function(l){return '<option value="'+l.id+'"'+(l.id===lastLine?' selected':'')+'>'+esc((l.code?l.code+' \u2013 ':'')+l.name)+'</option>'}).join('')+'</optgroup>':''}).join('');
+  var list=S.inv.slice().sort(function(a,b){return b.date.localeCompare(a.date)}).map(function(i){
+    var l=S.lines.find(function(x){return x.id===i.line});
+    return '<div class="inv"><div><b>'+esc(l?l.name:'Deleted line')+'</b><div class="sm">'+show(pd(i.date))+(l&&l.code?' \u00b7 '+esc(l.code):'')+(i.note?' · '+esc(i.note):'')+'</div></div><div class="r"><b>'+money(i.amt)+'</b><div class="sm">'+hrs(i.hours)+'</div></div><button class="x" data-act="del" data-id="'+i.id+'">'+(pend===i.id?'Delete?':'✕')+'</button></div>';
+  }).join('')||'<p class="sm">No invoices yet.</p>';
+  return '<h1>🧾 Invoices</h1><details class="card acc" data-o="add"'+(OPEN.add?' open':'')+'><summary><span class="ttl">Add invoice</span><span class="chev">▾</span></summary><label>Date</label><input type="date" id="f-date" value="'+fd(today())+'">'+(S.lines.length?'<label>Support code</label><select id="f-line">'+opts+'</select>':'<p class="hint">Add supports in the Plan tab first.</p>')+
+  '<div class="grid"><div><label>Hours</label><input id="f-hours" type="number" step="any" inputmode="decimal"></div><div><label>Amount charged ($)</label><input id="f-amt" type="number" step="any" inputmode="decimal"></div></div>'+
+  '<p class="hint">Amount fills in at the maximum rate. Change it if the provider charged less.</p><label>Provider / note (optional)</label><input id="f-note" type="text"><button class="full" data-act="addinv">Add invoice</button><div id="msg"></div></details><details class="card acc" data-o="hist"'+(OPEN.hist?' open':'')+'><summary><span class="ttl">History</span><span class="chev">▾</span></summary>'+list+'</details>';
+}
+
+var STATES=['National','Remote','Very Remote','QLD','NSW','ACT','NT','SA','TAS','VIC','WA'],GUIDE=null;
+try{GUIDE=JSON.parse(localStorage.getItem('ndis2guide'))}catch(e){}
+function csv(t){var r=[],row=[],f='',q=false,i=0,c;for(;i<t.length;i++){c=t[i];if(q){if(c==='"'){if(t[i+1]==='"'){f+='"';i++}else q=false}else f+=c}else if(c==='"')q=true;else if(c===','){row.push(f);f=''}else if(c==='\n'||c==='\r'){if(c==='\r'&&t[i+1]==='\n')i++;row.push(f);f='';r.push(row);row=[]}else f+=c}if(f||row.length){row.push(f);r.push(row)}return r}
+var STAGE=null;
+function stageItems(items,regions,file){
+  var sel={},have={};
+  S.lines.forEach(function(l){if(l.code)have[l.code.toLowerCase()]=1});
+  if(GUIDE)GUIDE.items.forEach(function(it){have[it.n.toLowerCase()]=1});
+  items.forEach(function(it){if(have[it.n.toLowerCase()])sel[it.n]=1});
+  S.lines.forEach(function(l){if(l.code||isGen(l))return;var sg=suggest(l,items,1,'National');if(sg.length&&sg[0].f>=0.67)sel[sg[0].it.n]=1});
+  var hl={},nh=0;(window.__hl||[]).forEach(function(n){hl[n]=1});items.forEach(function(it){if(hl[it.n]){sel[it.n]=1;nh++}else delete hl[it.n]});
+  STAGE={items:items,regions:regions,region:regions.indexOf('National')>=0?'National':regions[0],file:file||'',sel:sel,q:'',cat:'all',hl:hl,nh:nh};
+}
+function parseCsvAll(txt,file){
+  window.__hl=[];
+  var rows=csv(txt.replace(/^﻿/,'')),hi=-1,i;
+  for(i=0;i<Math.min(rows.length,15);i++){if(rows[i].some(function(x){return /item number/i.test(x)})){hi=i;break}}
+  if(hi<0)return 'Could not find the Support Item Number column. Please load the NDIS Pricing Schedule PDF or the support catalogue CSV.';
+  var H=rows[hi].map(function(x){return x.trim().toLowerCase()}),ix=function(re){for(var k=0;k<H.length;k++)if(re.test(H[k]))return k;return -1};
+  var cn=ix(/item number/),cm=ix(/item name/),cc=ix(/category name/),cu=ix(/^unit/),RG=[],items=[];
+  H.forEach(function(h,k){if(/^(act|nsw|nt|qld|sa|tas|vic|wa|national|remote|very remote)$/.test(h))RG.push({k:k,name:h.length<=3?h.toUpperCase():h.replace(/\b\w/g,function(c){return c.toUpperCase()})})});
+  if(!RG.length)return 'Could not find any price columns (National, Remote, Very Remote or a state).';
+  for(i=hi+1;i<rows.length;i++){
+    var r=rows[i];if(!r[cn])continue;var pr={},any=false;
+    RG.forEach(function(g){var v=parseFloat(String(r[g.k]).replace(/[$,]/g,''));if(isFinite(v)&&v>0){pr[g.name]=v;any=true}});
+    if(!any)continue;
+    items.push({n:r[cn].trim(),t:(r[cm]||'').trim(),c:cc>=0?(r[cc]||'').trim():'',u:cu>=0?(r[cu]||'').trim():'',p:pr});
+  }
+  if(!items.length)return 'No support items with prices were found in that file.';
+  stageItems(items,RG.map(function(g){return g.name}),file);
+  return '';
+}
+function applyStage(){
+  var st=STAGE,items=[];
+  st.items.forEach(function(it){if(!st.sel[it.n])return;var v=it.p[st.region];items.push({n:it.n,t:it.t,c:it.c,u:it.u,r:isFinite(v)?v:0,h:st.hl&&st.hl[it.n]?1:0})});
+  if(!items.length)return 'Select at least one support first.';
+  GUIDE={items:items,state:st.region,on:fd(today()),file:st.file};
+  try{localStorage.setItem('ndis2guide',JSON.stringify(GUIDE))}catch(e){}
+  return '';
+}
+function psFiltered(){
+  var q=STAGE.q.trim().toLowerCase(),cat=STAGE.cat;
+  return STAGE.items.filter(function(it){return (cat==='all'||it.c===cat)&&(!q||(it.t+' '+it.n).toLowerCase().indexOf(q)>=0)});
+}
+function psHtml(){
+  var m=psFiltered(),tot=m.length;
+  return (tot>300?'<div class="sm">Showing 300 of '+tot+'. Type more or choose a category to narrow it down.</div>':'')+(m.slice(0,300).map(function(it){
+    var v=it.p[STAGE.region],on=STAGE.sel[it.n];
+    return '<button class="pick'+(on?' on':'')+'" data-act="pgseltoggle" data-n="'+esc(it.n)+'"><b>'+(on?'✓ ':'')+esc(it.t)+'</b><span class="sm">'+esc(it.n)+(it.c?' · '+esc(it.c):'')+' · '+(isFinite(v)&&v>0?money(v)+' per '+esc(it.u||'unit'):'no '+esc(STAGE.region)+' price')+'</span></button>'}).join('')||'<div class="sm">No matches.</div>');
+}
+function psCountText(){return Object.keys(STAGE.sel).length+' selected · '+psFiltered().length+' shown'}
+function psRefresh(){var l=$('#ps-list'),c=$('#ps-count');if(l)l.innerHTML=psHtml();if(c)c.textContent=psCountText()}
+function pgSelCard(){
+  if(!STAGE)return '';
+  var hlNote=STAGE.nh?'<p class="hint" style="color:var(--ok)">✓ '+STAGE.nh+' item'+(STAGE.nh>1?'s':'')+' highlighted in your PDF '+(STAGE.nh>1?'were':'was')+' ticked for you.</p>':'';
+  var cats=[];STAGE.items.forEach(function(it){if(it.c&&cats.indexOf(it.c)<0)cats.push(it.c)});cats.sort();
+  return '<details class="card acc" data-o="pgsel"><summary><span><span class="ttl">☑️ Choose supports to add</span><div class="sm">'+esc(STAGE.file||'Uploaded file')+' · '+STAGE.items.length+' supports found</div></span><span class="chev">▾</span></summary>'+
+  hlNote+'<label>Prices to use</label><select id="ps-region">'+STAGE.regions.map(function(r){return '<option'+(r===STAGE.region?' selected':'')+'>'+esc(r)+'</option>'}).join('')+'</select>'+
+  '<label>Category</label><select id="ps-cat"><option value="all">All categories</option>'+cats.map(function(k){return '<option'+(k===STAGE.cat?' selected':'')+'>'+esc(k)+'</option>'}).join('')+'</select>'+
+  '<label>Search by name or item number</label><input id="ps-q" placeholder="e.g. weekday daytime" autocomplete="off" value="'+esc(STAGE.q)+'">'+
+  '<div class="grid" style="margin-top:10px"><button class="sec2" data-act="pgselall">Select all shown</button><button class="sec2" data-act="pgselnone">Clear shown</button></div>'+
+  '<div style="position:sticky;top:0;z-index:5;background:var(--card);padding:8px 0;margin-top:10px;border-bottom:1px solid var(--bd)"><div id="ps-count" class="sm" style="margin-bottom:6px">'+psCountText()+'</div><button data-act="pgselapply" style="width:100%">Add selected to the app</button><div id="ps-msg" class="sm" style="margin-top:6px;color:var(--bad)"></div></div><div id="ps-list" style="margin-top:6px">'+psHtml()+'</div>'+
+  '<p class="hint">Only the supports you tick are stored in the app, with the prices you chose. This replaces the price guide already in the app, and your plan does not change until you tap Apply on the Price guide screen. Supports already in your plan or the old guide start ticked, along with the best match for each plan support that has no item number yet. Check them before adding.</p></details>';
+}
+function pgViewHtml(q){
+  var qq=(q||'').trim().toLowerCase(),g={},order=[],tot=0;
+  GUIDE.items.forEach(function(it){if(qq&&(it.t+' '+it.n).toLowerCase().indexOf(qq)<0)return;var k=it.c||'Other';if(!g[k]){g[k]=[];order.push(k)}g[k].push(it);tot++});
+  order.sort();
+  return '<div class="sm" style="margin:10px 0 4px">'+tot+' of '+GUIDE.items.length+' supports shown</div>'+(order.map(function(k){return '<div class="sec">'+esc(k)+' ('+g[k].length+')</div>'+g[k].map(function(it){return '<div class="ln"><b>'+esc(it.t)+'</b><div class="sm">'+esc(it.n)+' · '+(it.r?money(it.r)+' per '+esc(it.u||'unit'):'no price')+'</div></div>'}).join('')}).join('')||'<div class="sm">No matches.</div>');
+}
+function pgViewCard(){
+  if(!GUIDE)return '';
+  return '<details class="card acc" data-o="pgview"><summary><span><span class="ttl">📋 Whole price guide</span><div class="sm">'+GUIDE.items.length+' supports · '+esc(GUIDE.state)+' prices · loaded '+esc(GUIDE.on)+'</div></span><span class="chev">▾</span></summary><input id="pgv-q" placeholder="Search name or item number" autocomplete="off" style="margin-top:6px"><div id="pgv-list">'+pgViewHtml('')+'</div></details>';
+}
+function gfind(code,name){
+  if(!GUIDE)return null;var n=(code||'').trim().toLowerCase(),m=(name||'').trim().toLowerCase(),i,it;
+  if(n)for(i=0;i<GUIDE.items.length;i++){it=GUIDE.items[i];if(it.n.toLowerCase()===n)return it}
+  if(m)for(i=0;i<GUIDE.items.length;i++){it=GUIDE.items[i];if(it.t.toLowerCase()===m)return it}
+  return null;
+}
+function gfill(l){var g=gfind(l.code,l.name);if(!g)return;if(!l.code)l.code=g.n;if(!l.cat)l.cat=g.c;if(!(+l.rate)&&g.r)l.rate=g.r}
+function pgSearch(v){
+  var o=$('#pg-res');if(!o)return;
+  var q=(v||'').trim().toLowerCase(),cp=$('#pg-comp'),ck=$('#pg-cat'),cat=ck?ck.value:'auto',cid=cp?cp.value:'',
+    cc=S.comps.find(function(c){return c.id===cid}),cs=[];
+  if(cat==='auto')cs=(compCats(cc)).map(function(k){return k.toLowerCase()});else if(cat!=='all')cs=[cat.toLowerCase()];
+  if(q.length<2&&!cs.length){o.textContent='Type at least 2 letters, or choose a category.';return}
+  var all=GUIDE.items.filter(function(it){return q.length<2||(it.t+' '+it.n).toLowerCase().indexOf(q)>=0}),m=all,note='';
+  if(cs.length){
+    var fl=all.filter(function(it){var x=it.c.toLowerCase();return !x||cs.some(function(k){return x.indexOf(k)>=0||k.indexOf(x)>=0})});
+    if(fl.length){m=fl;if(cat==='auto')note='<div class="sm">Showing this funding’s categories: '+esc(compCats(cc).join(', '))+'</div>'}
+    else note='<div class="sm">No match in that category, showing all.</div>';
+  }
+  var have={};S.lines.forEach(function(l){if(l.code)have[l.comp+'|'+l.code]=1});
+  var tot=m.length;m=m.slice(0,60);
+  o.innerHTML=note+(tot>60?'<div class="sm">Showing 60 of '+tot+'. Type more to narrow it down.</div>':'')+m.map(function(it){var h=have[cid+'|'+it.n];return '<button class="pick'+(h?' on':'')+'" data-act="pgpick" data-n="'+esc(it.n)+'"><b>'+(h?'✓ ':'')+esc(it.t)+'</b><span class="sm">'+esc(it.n)+(it.c?' · '+esc(it.c):'')+' · '+(it.r?money(it.r)+' per '+esc(it.u||'unit'):'no price')+(h?' · in your plan':'')+'</span></button>'}).join('')||'No matches.';
+}
+function pgPreview(){
+  if(!GUIDE||!S.lines.length)return '';
+  var ch=[],same=0,miss=[];
+  S.lines.forEach(function(l){var g=gfind(l.code,l.name);if(!g||!g.r){if(l.code)miss.push(l);return}if(+l.rate&&Math.abs(l.rate-g.r)<0.005)same++;else ch.push({l:l,g:g})});
+  var h='<div class="sec">Your current plan</div>';
+  if(ch.length)h+=ch.map(function(c){return '<div class="ln"><b>'+esc(c.l.name)+'</b><div class="sm">'+esc(c.g.n)+' · '+(+c.l.rate?money(c.l.rate):'no rate')+' → '+money(c.g.r)+' per '+esc(c.g.u||'unit')+'</div></div>'}).join('')+'<button class="full" data-act="pgfill">Apply new rates to my current plan ('+ch.length+')</button><p class="hint">Only the supports in your current plan change. Past plans and invoices you have already entered stay as they are. A new rate changes how many hours the plan total buys.</p>';
+  else h+='<p class="hint">'+(same?'Your current plan already matches this price guide.':'None of your supports match an item in this price guide yet. Choose supports below.')+'</p>';
+  if(miss.length)h+='<p class="hint">Not found in this price guide (rate kept): '+miss.map(function(l){return esc(l.code)}).join(', ')+'</p>';
+  return h;
+}
+function pgCard(){
+  var sub=GUIDE?GUIDE.items.length+' supports · '+esc(GUIDE.state)+' prices · loaded '+esc(GUIDE.on)+(GUIDE.file?' · '+esc(GUIDE.file):''):'Not loaded yet';
+  return '<details class="card acc" data-o="pg"><summary><span><span class="ttl">📖 Price guide</span><div class="sm">'+sub+'</div></span><span class="chev">▾</span></summary>'+
+  '<p class="hint">Upload each year’s NDIS Pricing Schedule (PDF) or support catalogue (CSV). You then choose which supports to keep and whether to use National, Remote or Very Remote prices. Only your choices are stored in the app, and your plan does not change until you tap Apply.</p>'+
+  '<button class="full" data-act="pgupload">⬆️ Upload new price guide</button><input type="file" id="pg-file" accept=".pdf,application/pdf,.csv,text/csv" style="display:none">'+
+  (GUIDE?'<button class="full sec2" data-act="pgview">📋 View whole price guide</button>':'')+
+  (STAGE?'<button class="full sec2" data-act="pgresume">☑️ Continue choosing supports ('+esc(STAGE.file||'uploaded file')+')</button>':'')+
+  '<div id="pg-msg" class="sm" style="margin-top:8px;color:var(--bad)"></div>'+pgPreview()+'</details>';
+}
+var PENDING=null;
+function loadJs(src){return new Promise(function(ok,no){var e=document.createElement('script');e.src=src;e.onload=ok;e.onerror=function(){no(new Error('Could not load '+src))};document.head.appendChild(e)})}
+function hlRects(a){
+  var q=a.quadPoints?Array.prototype.slice.call(a.quadPoints):[],pts=[],i;
+  if(q.length){
+    if(typeof q[0]==='number'){for(i=0;i+7<q.length;i+=8)pts.push(q.slice(i,i+8))}
+    else if(Array.isArray(q[0])){q.forEach(function(z){if(z.length===4&&typeof z[0]==='object')pts.push([z[0].x,z[0].y,z[1].x,z[1].y,z[2].x,z[2].y,z[3].x,z[3].y]);else if(z.length>=8)pts.push(z)})}
+    else if(typeof q[0]==='object'){for(i=0;i+3<q.length;i+=4)pts.push([q[i].x,q[i].y,q[i+1].x,q[i+1].y,q[i+2].x,q[i+2].y,q[i+3].x,q[i+3].y])}
+  }
+  var rs=pts.map(function(z){var xs=[z[0],z[2],z[4],z[6]],ys=[z[1],z[3],z[5],z[7]];return [Math.min.apply(0,xs),Math.min.apply(0,ys),Math.max.apply(0,xs),Math.max.apply(0,ys)]});
+  if(!rs.length&&a.rect)rs.push(a.rect);
+  return rs;
+}
+function hlItems(hls,items){
+  var found=[],re=/\b\d{2}_\d{3}_\d{4}_\d_\d\b/g;
+  hls.forEach(function(a){hlRects(a).forEach(function(r){
+    var inb=items.filter(function(it){if(!it.transform)return false;var cx=it.transform[4]+(it.width||0)/2,cy=it.transform[5]+(it.height||0)/2;return cx>=r[0]-2&&cx<=r[2]+2&&cy>=r[1]-2&&cy<=r[3]+2});
+    var t1=inb.map(function(it){return it.str}).join(' '),m,got=false;
+    re.lastIndex=0;while((m=re.exec(t1))){got=true;if(found.indexOf(m[0])<0)found.push(m[0])}
+    if(!got){var t2=t1.replace(/\s+/g,'');re.lastIndex=0;while((m=re.exec(t2))){if(found.indexOf(m[0])<0)found.push(m[0])}}
+  })});
+  return found;
+}
+async function pdfText(file){
+  var CDN='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/';
+  if(!window.pdfjsLib){
+    window.__pdfBase='';
+    try{await loadJs('pdf.min.js')}catch(e){await loadJs(CDN+'pdf.min.js');window.__pdfBase=CDN}
+  }
+  pdfjsLib.GlobalWorkerOptions.workerSrc=(window.__pdfBase||'')+'pdf.worker.min.js';
+  var doc=await pdfjsLib.getDocument({data:new Uint8Array(await file.arrayBuffer())}).promise,out='';
+  window.__hl=[];
+  for(var p=1;p<=doc.numPages;p++){var pg=await doc.getPage(p),tc=await pg.getTextContent();out+=tc.items.map(function(i){return i.str+(i.hasEOL?'\n':' ')}).join('')+'\n';
+    try{var an=await pg.getAnnotations(),hls=an.filter(function(a){return a.subtype==='Highlight'});if(hls.length)hlItems(hls,tc.items).forEach(function(n){if(window.__hl.indexOf(n)<0)window.__hl.push(n)})}catch(e){}}
+  return out;
+}
+
+async function inflateRaw(d){var ds=new DecompressionStream('deflate-raw'),w=ds.writable.getWriter();w.write(d);w.close();return new TextDecoder().decode(await new Response(ds.readable).arrayBuffer())}
+async function docxText(file){
+  var buf=new Uint8Array(await file.arrayBuffer()),dv=new DataView(buf.buffer),e=buf.length-22;
+  while(e>=0&&dv.getUint32(e,true)!==0x06054b50)e--;
+  if(e<0)throw new Error('That is not a Word (.docx) file.');
+  var n=dv.getUint16(e+10,true),p=dv.getUint32(e+16,true),xml='';
+  for(var i=0;i<n;i++){
+    if(dv.getUint32(p,true)!==0x02014b50)break;
+    var meth=dv.getUint16(p+10,true),csz=dv.getUint32(p+20,true),nl=dv.getUint16(p+28,true),el=dv.getUint16(p+30,true),cl=dv.getUint16(p+32,true),lo=dv.getUint32(p+42,true),nm=new TextDecoder().decode(buf.subarray(p+46,p+46+nl));
+    if(nm==='word/document.xml'){var ds=lo+30+dv.getUint16(lo+26,true)+dv.getUint16(lo+28,true),dat=buf.subarray(ds,ds+csz);xml=meth===0?new TextDecoder().decode(dat):await inflateRaw(dat);break}
+    p+=46+nl+el+cl;
+  }
+  if(!xml)throw new Error('Could not find the text inside that Word file.');
+  return xml.replace(/<w:tab\/>/g,' ').replace(/<w:br\/>/g,'\n').replace(/<\/w:p>/g,'\n').replace(/<[^>]+>/g,'').replace(/&lt;/g,'<').replace(/&gt;/g,'>').replace(/&quot;/g,'"').replace(/&apos;/g,"'").replace(/&amp;/g,'&');
+}
+var BD=null;
+function parseBreakdown(raw){
+  var L=raw.replace(/\r/g,'').replace(/(\$[\d,]+\.\d{2})\s*(This may include)/gi,'$1\n$2').replace(/(\$[\d,]+\.\d{2})\s*([•·])/g,'$1\n$2').split('\n').map(function(x){return x.replace(/\s+/g,' ').trim()}).filter(Boolean),cur='',gs=[],i,m,m2,num=function(v){return parseFloat(String(v).replace(/,/g,''))};
+  for(i=0;i<L.length;i++){
+    var ln=L[i];if(/^total funding/i.test(ln))continue;
+    if((m=/^(.{3,110}?):\s*\$([\d,]+\.\d{2})$/.exec(ln))){cur=m[1].trim();continue}
+    m=/^[•·*\-]?\s*(.+?)\s+total\s+\$([\d,]+\.\d{2})$/i.exec(ln);m2=/^[•·*\-]?\s*(.+?)\s+up to the amount of\s+\$([\d,]+\.\d{2})/i.exec(ln);
+    if(!m&&!m2)continue;
+    var e={name:(m||m2)[1].trim(),total:num((m||m2)[2]),cat:cur,parts:[],rate:0,note:''};
+    if(m){
+      var d='',k=i+1;while(k<L.length&&k<=i+3){d+=' '+L[k];if(/at the rate\s+\$?[\d,.]+/i.test(d))break;k++}
+      var rm=/at the rate\s+\$?([\d,]+\.?\d*)/i.exec(d),pm=/(\d+(?:\.\d+)?)\s+hours?\s+per\s+(week|month|year|day)\s+for\s+(\d+)\s+(?:weeks?|months?|years?|days?)/i.exec(d),sm=/delivered as a (\d):(\d)/i.exec(d),mm=/(\d+)\s+months?\s+per\s+year\s+for\s+(\d+)\s+years?/i.exec(d);
+      if(pm){e.parts.push({h:+pm[1],u:pm[2].toLowerCase(),n:+pm[3],ratio:sm?sm[1]+':'+sm[2]:''});if(rm)e.rate=num(rm[1])}
+      else if(mm)e.note=mm[1]+' months per year for '+mm[2]+' years at '+(rm?'$'+rm[1]:'the plan rate');
+      if(pm&&rm&&Math.abs(+pm[1]*+pm[3]*num(rm[1])-e.total)>1)e.warn=1;
+    }
+    gs.push(e);
+  }
+  if(!gs.length)return {err:'No plan breakdown entries were found. This should be the “NDIS budget breakdown” document with lines such as “… total $1,234.00 – This may include: …”.'};
+  var cats=[];gs.forEach(function(g){if(g.cat&&cats.indexOf(g.cat)<0)cats.push(g.cat)});
+  gs.forEach(function(g){var c=compForCat(g.cat);g.comp=c?c.id:''});
+  return {groups:gs,cats:cats};
+}
+function compForCat(cat){
+  var k=String(cat||'').toLowerCase().trim(),c=null;if(!k)return null;
+  S.comps.forEach(function(x){if(c)return;if(compCats(x).some(function(z){return z.toLowerCase()===k}))c=x});
+  if(c)return c;
+  S.comps.forEach(function(x){if(c)return;var nm=x.name.toLowerCase().replace(/\s*\(.*?\)\s*/g,' ').trim();if(nm&&(k.indexOf(nm)>=0||nm.indexOf(k)>=0))c=x});
+  if(c)return c;
+  var core=/^(assistance with daily life|assistance with social|transport|consumables)/.test(k);
+  if(core)S.comps.forEach(function(x){if(!c&&/core/i.test(x.name))c=x});
+  return c;
+}
+function partText(p){
+  var u={week:'week',month:'month',year:'year',day:'day'}[p.u]||p.u,n=+p.n||0;
+  return (+p.h||0)+' h per '+u+' for '+n+' '+u+(n===1?'':'s')+(p.ratio?' · '+p.ratio+' support':'');
+}
+function partsHours(l){var t=0;(l.parts||[]).forEach(function(p){t+=(+p.h||0)*(+p.n||0)});return t}
+function weekNow(l,t){
+  var ps=(l.parts||[]).filter(function(p){return p.u==='week'});if(!ps.length)return null;
+  var w=Math.floor((t-pd(S.plan.start))/6048e5),a=0;
+  ps.forEach(function(p){if(w<(+p.n||0))a+=+p.h||0});
+  return a;
+}
+function weekUsed(l,t){
+  var wd=(t.getDay()+6)%7,mon=addD(t,-wd),sun=addD(mon,6);
+  return used(l,mon,sun).h;
+}
+function partsHtml(l){
+  if(!(l.parts&&l.parts.length))return l.note?'<div class="sm">'+esc(l.note)+'</div>':'';
+  var wn=weekNow(l,today()),h='<div class="sm" style="margin-top:4px">'+l.parts.map(function(p){return '• '+esc(partText(p))}).join('<br>')+'<br>Total '+hrs(partsHours(l))+'</div>';
+  if(wn!==null)h+='<div class="sm" style="margin-top:4px;color:var(--ok)"><b>This week:</b> '+hrs(weekUsed(l,today()))+' used of '+hrs(wn)+' allowed</div>';
+  return h;
+}
+function recalcParts(l){var r=+l.rate||0;if(r>0&&l.parts&&l.parts.length)l.total=Math.round(partsHours(l)*r*100)/100}
+function bdGroups(){
+  var by={},order=[];
+  BD.groups.forEach(function(g){
+    if(!g.comp)return;var key=g.comp+'|'+g.name.toLowerCase(),o=by[key];
+    if(!o){o=by[key]={comp:g.comp,name:g.name,total:0,rate:0,parts:[],note:'',cat:g.cat};order.push(key)}
+    o.total+=g.total;if(g.rate>o.rate)o.rate=g.rate;g.parts.forEach(function(p){o.parts.push(p)});if(g.note)o.note=g.note;
+  });
+  return order.map(function(k){return by[k]});
+}
+function bdCard(){
+  var h='<details class="card acc" data-o="bd"><summary><span><span class="ttl">📋 Read plan breakdown</span><div class="sm">Items, amounts and hours per week</div></span><span class="chev">▾</span></summary>'+
+    '<p class="hint">Upload the “NDIS budget breakdown” (Word .docx or PDF). The app sets up each funding’s items with their amounts and hours per week through the plan, and picks the item numbers from your price guide (highlighted ones first). Items that already have invoices are kept.</p>'+
+    '<button class="full" data-act="bdupload">⬆️ Upload plan breakdown</button><input type="file" id="bd-file" accept=".docx,.pdf,.txt,application/pdf,application/vnd.openxmlformats-officedocument.wordprocessingml.document" style="display:none"><div id="bd-msg" class="sm" style="margin-top:8px;color:var(--bad)"></div>';
+  if(BD&&BD.groups)h+=bdPreview();
+  return h+'</details>';
+}
+function bdPreview(){
+  var gs=bdGroups(),h='<div class="sec">Found in your breakdown</div>',un=BD.groups.filter(function(g){return !g.comp}),shown={};
+  S.comps.forEach(function(c){
+    var mine=gs.filter(function(g){return g.comp===c.id});if(!mine.length)return;
+    h+='<div class="sm" style="margin-top:8px"><b>'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</b> · funding '+money(sum(c.amts))+' · items '+money(sum(mine.map(function(g){return g.total})))+'</div>';
+    mine.forEach(function(g){
+      var fake={name:g.name,rate:g.rate,comp:c.id},sg=GUIDE?suggest(fake,GUIDE.items,1,GUIDE.state):[];
+      h+='<div class="ln"><b>'+esc(g.name)+'</b><div class="sm">'+money(g.total)+(g.rate?' · max '+money(g.rate)+'/h':'')+' · '+(sg.length?'<span style="color:var(--ok)">'+esc(sg[0].it.n)+(sg[0].it.h?' (highlighted)':'')+'</span>':'<span class="neg">no item number match</span>')+'</div>'+
+        g.parts.map(function(p){return '<div class="sm">• '+esc(partText(p))+'</div>'}).join('')+(g.note?'<div class="sm">'+esc(g.note)+'</div>':'')+'</div>';
+    });
+  });
+  var usedC={};gs.forEach(function(g){if(!g.comp)return;var c0=S.comps.find(function(x){return x.id===g.comp}),sg0=GUIDE?suggest({name:g.name,rate:g.rate,comp:g.comp},GUIDE.items,1,GUIDE.state):[];if(sg0.length)usedC[sg0[0].it.n]=1});
+  var lost=GUIDE?GUIDE.items.filter(function(it){return it.h&&!usedC[it.n]}):[];
+  if(lost.length)h+='<p class="hint">Highlighted in your price guide but not matched to a plan item (set them with “Change” on the item): '+lost.map(function(it){return esc(it.n+' '+it.t)}).join('; ')+'</p>';
+  if(un.length)h+='<p class="hint" style="color:var(--bad)">Not matched to a funding (skipped): '+un.map(function(g){return esc(g.name)}).join(', ')+'</p>';
+  return h+'<button class="full" data-act="bdapply">'+(pend==='bd'?'Tap again to replace the items shown':'Use this breakdown')+'</button><p class="hint">This replaces the items in the fundings above. Your invoices are not touched.</p>';
+}
+function applyBreakdown(){
+  var gs=bdGroups(),n=0,kept=0,codes=0;
+  var cids={};gs.forEach(function(g){cids[g.comp]=1});
+  BD.groups.forEach(function(g){if(!g.comp||!g.cat)return;var c=S.comps.find(function(x){return x.id===g.comp});if(!c)return;c.cats=c.cats||[];if(c.cats.indexOf(g.cat)<0&&compCats(c).map(function(z){return z.toLowerCase()}).indexOf(g.cat.toLowerCase())<0)c.cats.push(g.cat)});
+  Object.keys(cids).forEach(function(cid){
+    var c=S.comps.find(function(x){return x.id===cid}),hasInv={};S.inv.forEach(function(i){hasInv[i.line]=1});
+    var oldGen=S.lines.filter(function(l){return l.comp===cid&&isGen(l)&&hasInv[l.id]}).length;
+    S.lines=S.lines.filter(function(l){if(l.comp!==cid)return true;if(hasInv[l.id]){kept++;return true}return false});
+    gs.filter(function(g){return g.comp===cid}).forEach(function(g){
+      var nl={id:uid(),comp:cid,name:g.name,code:'',cat:g.cat||'',rate:g.parts.length?g.rate:0,total:Math.round(g.total*100)/100};
+      if(g.parts.length)nl.parts=g.parts.map(function(p){return {h:p.h,u:p.u,n:p.n,ratio:p.ratio||''}});
+      if(g.note)nl.note=g.note;
+      if(GUIDE){var sg=suggest({name:g.name,rate:g.rate,comp:cid},GUIDE.items,1,GUIDE.state);if(sg.length&&sg[0].f>=0.5){nl.code=sg[0].it.n;if(sg[0].it.c)nl.cat=sg[0].it.c;codes++}}
+      S.lines.push(nl);n++;
+    });
+    if(!S.lines.some(function(l){return l.comp===cid&&isGen(l)}))S.lines.push({id:uid(),comp:cid,name:c.name+' – general',code:'',cat:'',rate:0,total:0});
+  });
+  save();
+  return 'Added '+n+' item'+(n===1?'':'s')+' with amounts and hours'+(codes?', '+codes+' with item numbers from your price guide':'')+'.'+(kept?' '+kept+' item'+(kept===1?'':'s')+' with invoices '+(kept===1?'was':'were')+' kept.':'');
+}
+
+var WZ={plan:null,planName:'',bd:'',bdName:'',pg:'',pgMsg:'',busy:''},NOTE='';
+function wzStep(n,title,done,sub,btn,act){
+  return '<div class="ln"><b>'+(done?'✅ ':n+'. ')+title+'</b><div class="sm">'+sub+'</div><button class="full'+(done?' sec2':'')+'" data-act="'+act+'">'+btn+'</button></div>';
+}
+function wzCard(){
+  var h='<details class="card acc" data-o="wz"><summary><span><span class="ttl">🚀 Set up from my documents</span><div class="sm">Upload your plan, breakdown and price guide</div></span><span class="chev">▾</span></summary>'+
+   '<p class="hint">Upload your documents one by one. When you tap “Set up my plan” the app creates the funding periods, every item with its amount, hours and item number, and starts tracking spending. Each step is optional, but the more you add the less you have to enter.</p>';
+  h+=wzStep(1,'Your NDIS plan (PDF)',!!WZ.plan,WZ.plan?esc(WZ.planName)+' · '+dr(WZ.plan.plan)+' · '+WZ.plan.comps.length+' funding'+(WZ.plan.comps.length>1?'s':''):'Gives the plan dates, each funding and its pay periods.','⬆️ '+(WZ.plan?'Choose a different file':'Upload plan PDF'),'wzplan');
+  h+=wzStep(2,'Plan breakdown (Word or PDF)',!!WZ.bd,WZ.bd?esc(WZ.bdName)+' · read':'Gives each item, the amount and the hours per week.','⬆️ '+(WZ.bd?'Choose a different file':'Upload breakdown'),'wzbd');
+  h+=wzStep(3,'Price guide (PDF or CSV)',!!STAGE&&WZ.pg===STAGE.file,STAGE&&WZ.pg===STAGE.file?esc(WZ.pg)+' · '+STAGE.items.length+' supports'+(STAGE.nh?' · '+STAGE.nh+' highlighted':''):'Highlight the items you use. Gives item numbers and maximum rates.','⬆️ '+(STAGE&&WZ.pg===STAGE.file?'Choose a different file':'Upload price guide'),'wzpg');
+  h+='<input type="file" id="wz-plan" accept=".pdf,application/pdf" style="display:none"><input type="file" id="wz-bd" accept=".docx,.pdf,.txt,application/pdf" style="display:none"><input type="file" id="wz-pg" accept=".pdf,application/pdf,.csv,text/csv" style="display:none">'+
+    '<div id="wz-msg" class="sm" style="margin-top:8px;color:var(--bad)">'+esc(WZ.busy)+'</div>';
+  var ok=WZ.plan||WZ.bd||(STAGE&&WZ.pg===STAGE.file);
+  if(ok)h+='<button class="full" style="margin-top:10px" data-act="wzgo">'+(pend==='wz'?'Tap again to confirm':'✨ Set up my plan')+'</button>'+(WZ.plan?'<p class="hint">Your current plan and invoices are saved under Past plans first.</p>':'<p class="hint">Without step 1 the items go into your current plan’s fundings.</p>');
+  return h+'</details>';
+}
+function wzCreate(){
+  var notes=[];
+  if(WZ.plan){archiveCurrent();S.plan=WZ.plan.plan;S.comps=WZ.plan.comps;S.lines=WZ.plan.comps.map(function(c){return {id:uid(),comp:c.id,name:c.name+' – general',code:'',cat:'',rate:0,total:sum(c.amts)}});S.inv=[];notes.push('Plan '+dr(S.plan)+' with '+S.comps.length+' funding'+(S.comps.length>1?'s':'')+'.')}
+  BD=null;
+  if(WZ.bd){var r=parseBreakdown(WZ.bd);if(r.err)notes.push(r.err);else BD=r}
+  if(STAGE&&WZ.pg===STAGE.file){
+    if(BD){bdGroups().forEach(function(g){var sg=suggest({name:g.name,rate:g.rate,comp:g.comp},STAGE.items.map(function(it){return {n:it.n,t:it.t,c:it.c,u:it.u,r:irate(it,STAGE.region),h:STAGE.hl&&STAGE.hl[it.n]?1:0}}),1,STAGE.region);if(sg.length&&sg[0].f>=0.5)STAGE.sel[sg[0].it.n]=1})}
+    var e=applyStage();if(e)notes.push(e);else notes.push('Price guide: '+GUIDE.items.length+' supports kept ('+GUIDE.state+' prices).');
+    STAGE=null;
+  }
+  if(BD){notes.push(applyBreakdown())}
+  var miss=S.lines.filter(function(l){return !isGen(l)&&!l.code}).length;
+  if(miss)notes.push(miss+' item'+(miss>1?'s still need':' still needs')+' an item number: Plan, Item numbers by funding.');
+  S.comps.forEach(function(c){var tt=sum(c.amts),al=0;S.lines.forEach(function(l){if(l.comp===c.id&&!isGen(l))al+=+l.total||0});if(al-tt>0.5)notes.push(c.name+': items add up to '+money(al)+', which is more than the funding '+money(tt)+'.')});
+  WZ={plan:null,planName:'',bd:'',bdName:'',pg:'',pgMsg:'',busy:''};BD=null;save();
+  return notes;
+}
+function parsePlan(raw){
+  var t=raw.replace(/NDIS Number:\s*\d+/gi,' ').replace(/Page\s+\d+\s+of\s+\d+/gi,' ').replace(/\s+/g,' '),w=[];
+  var iso=function(d){var q=d.split('/');return q[2]+'-'+q[1]+'-'+q[0]};
+  var dm=t.match(/plan starts on (\d{2}\/\d{2}\/\d{4}) and ends on (\d{2}\/\d{2}\/\d{4})/i)||t.match(/plan start date (\d{2}\/\d{2}\/\d{4}).{0,80}?reassessment date (\d{2}\/\d{2}\/\d{4})/i);
+  if(!dm)return {err:'Could not find the plan start and end dates. Is this an NDIS plan PDF?'};
+  var pairs=[],seen={},re=/•\s*([A-Z][^•.:()]{1,90}?)\s*\(\s*(plan|self|agency)-?\s?managed/gi,m;
+  while((m=re.exec(t))){var mg=m[2].toLowerCase(),k=m[1].trim()+'|'+mg;if(!seen[k]){seen[k]=1;pairs.push({name:m[1].trim(),mg:mg})}}
+  if(!pairs.length)return {err:'Could not find the list of funding components in this PDF.'};
+  var found=[];
+  pairs.forEach(function(p){
+    var dup=pairs.filter(function(q){return q.name===p.name}).length>1,
+      en=p.name.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'),
+      head=dup?en+'\\s*\\(\\s*'+p.mg+'-?\\s?managed\\s*\\)':en+'(?:\\s*\\([^)]*\\))?',
+      hm=new RegExp(head+'\\s+Funding amount:\\s*\\$([\\d,]+\\.\\d{2})','i').exec(t);
+    if(hm)found.push({p:p,dup:dup,i:hm.index,total:parseFloat(hm[1].replace(/,/g,''))});
+  });
+  found.sort(function(a,b){return a.i-b.i});
+  var endAll=t.indexOf('Information about you',found.length?found[found.length-1].i:0);if(endAll<0)endAll=t.length;
+  var comps=[];
+  found.forEach(function(f,n){
+    if(!(f.total>0))return;
+    var sec=t.slice(f.i,n+1<found.length?found[n+1].i:endAll),amts=[],ms=[],rr=/(\d+)\s+months?\s+(?:Funding amount\s+)?\$([\d,]+\.\d{2})/g,x;
+    while((x=rr.exec(sec))){ms.push(+x[1]);amts.push(parseFloat(x[2].replace(/,/g,'')))}
+    if(!amts.length){w.push('No funding periods found for '+f.p.name+'.');return}
+    var cnt={},best=ms[0];ms.forEach(function(v){cnt[v]=(cnt[v]||0)+1;if(cnt[v]>cnt[best])best=v});
+    if(ms.some(function(v){return v!==best}))w.push(f.p.name+' has funding periods of different lengths. Please check its periods.');
+    if(Math.abs(sum(amts)-f.total)>0.05)w.push(f.p.name+': periods add up to '+money(sum(amts))+' but the funding is '+money(f.total)+'.');
+    var cm=/following support categor(?:y|ies):\s*(.*?)\s*Support details/i.exec(sec);
+    comps.push({id:uid(),name:f.p.name+(f.dup||f.p.mg==='self'?' ('+f.p.mg+'-managed)':''),months:best,amts:amts,cats:cm?cm[1].split('•').map(function(z){return z.trim()}).filter(Boolean):[]});
+  });
+  if(!comps.length)return {err:'No funding with periods was found in this PDF.'};
+  return {plan:{start:iso(dm[1]),end:iso(dm[2])},comps:comps,warns:w};
+}
+async function readPdf(f){
+  var o=$('#pdf-res');o.style.color='';o.textContent='Reading the PDF...';
+  try{
+    var res=parsePlan(await pdfText(f));
+    if(res.err){o.style.color='var(--bad)';o.textContent=res.err;return}
+    PENDING=res;
+    o.innerHTML='<b>'+dr(res.plan)+'</b>'+res.comps.map(function(c){return '<div>'+esc(c.name)+' \u00b7 '+money(sum(c.amts))+' \u00b7 '+c.amts.length+' period'+(c.amts.length>1?'s':'')+' of '+c.months+' month'+(c.months>1?'s':'')+'</div>'}).join('')+res.warns.map(function(x){return '<div style="color:var(--bad)">'+esc(x)+'</div>'}).join('')+'<button class="full" data-act="pdfapply">Create plan from this PDF</button>';
+  }catch(e){o.style.color='var(--bad)';o.textContent='Could not read the PDF: '+(e&&e.message?e.message:e)}
+}
+var CATS={'01':'Assistance with Daily Life','02':'Transport','03':'Consumables','04':'Assistance with Social, Economic and Community Participation','05':'Assistive Technology','06':'Home Modifications','07':'Support Coordination','08':'Improved Living Arrangements','09':'Increased Social and Community Participation','10':'Finding and Keeping a Job','11':'Improved Relationships','12':'Improved Health and Wellbeing','13':'Improved Learning','14':'Improved Life Choices','15':'Improved Daily Living Skills'};
+function catOf(n,name){if(/^plan management/i.test(name))return 'Choice and Control';return CATS[n.slice(0,2)]||''}
+function parseSchedule(raw,file){
+  var t=raw.replace(/National Disability Insurance Scheme Pricing Schedule for \d{4}-\d{2}/gi,' ').replace(/Page\s+\d+\s+of\s+\d+/gi,' ').replace(/Support Item\s+Number\s+Support Item Name\s+Unit\s+National\s+Remote\s+Very\s+Remote/gi,' ').replace(/\s+/g,' ');
+  var ids=[],re=/\b\d{2}_\d{3}_\d{4}_\d_\d(?:_[A-Z])?\b/g,m,items=[],RN=['National','Remote','Very Remote'];
+  while((m=re.exec(t)))ids.push({n:m[0],s:m.index,e:m.index+m[0].length});
+  if(!ids.length)return 'No support item numbers were found. Is this the NDIS Pricing Schedule PDF?';
+  ids.forEach(function(d,i){
+    var seg=t.slice(d.e,i+1<ids.length?ids[i+1].s:t.length),dl=seg.indexOf('$');if(dl<0)return;
+    var pr=seg.slice(dl).replace(/\$\s+(?=\d)/g,'$').match(/\$[\d,]+\.\d{2}/g)||[],pre=seg.slice(0,dl),um,u='',last=null,ur=/\b(Hour|Each|Day|Week|Month|Year|Km)\b/g;
+    while((um=ur.exec(pre)))last=um;
+    if(last){u=last[1];pre=pre.slice(0,last.index)+' '+pre.slice(last.index+u.length)}
+    var name=pre.replace(/\s+/g,' ').trim().replace(/\s+National$/,'').replace(/\s+(Schedule|Table)\s+\d+:.*$/i,'').trim(),pm={};
+    RN.forEach(function(k,x){if(pr[x]){var v=parseFloat(pr[x].replace(/[$,]/g,''));if(v>0)pm[k]=v}});
+    if(!name||!Object.keys(pm).length)return;
+    items.push({n:d.n,t:name,c:catOf(d.n,name),u:u,p:pm});
+  });
+  if(!items.length)return 'No prices were found in this PDF.';
+  stageItems(items,RN,file);
+  return '';
+}
+function backupText(){return JSON.stringify({app:'ndis-tracker',version:VERSION,saved:fd(today()),data:S})}
+function parseBackup(txt){
+  var d;try{d=JSON.parse(txt)}catch(e){return 'That is not a valid backup.'}
+  if(d&&d.data)d=d.data;
+  if(!d||!d.plan||!Array.isArray(d.comps)||!Array.isArray(d.lines)||!Array.isArray(d.inv))return 'That file is not an NDIS Tracker backup.';
+  d.archive=Array.isArray(d.archive)?d.archive:[];return d;
+}
+function backupCard(){
+  return '<details class="card acc" data-o="bk"><summary><span class="ttl">💾 Backup &amp; restore</span><span class="chev">▾</span></summary><p class="hint">A backup holds your plan, invoices and past plans. Save it somewhere safe, because the app’s data is lost if the app is uninstalled.</p><button class="full" data-act="savebk">Save backup file</button><label>Backup text (copy this if saving a file isn’t possible)</label><textarea id="bk-text" rows="3" readonly>'+esc(backupText())+'</textarea><div id="bk-msg" class="sm" style="margin-top:6px"></div><div class="sec">Restore</div><input type="file" id="rb-file" accept=".json,application/json"><label>Backup text (filled from the file, or paste it here)</label><textarea id="rb-text" rows="3"></textarea><button class="full sec2" data-act="restore">'+(pend==='rs'?'Tap again to replace everything with this backup':'Restore backup')+'</button><div id="rb-msg" class="sm" style="color:var(--bad);margin-top:8px"></div></details>';
+}
+function archiveCurrent(){if(S.comps.length||S.inv.length)S.archive=(S.archive||[]).concat([{plan:S.plan,comps:S.comps,lines:S.lines,inv:S.inv,on:fd(today())}])}
+function dr(p){return p&&p.start&&p.end?show(pd(p.start))+' – '+show(pd(p.end)):'Undated plan'}
+function importPlan(txt){
+  var d,re=/^\d{4}-\d{2}-\d{2}$/;
+  try{d=JSON.parse(txt)}catch(e){return 'That is not a valid plan file.'}
+  if(!d||!d.plan||!re.test(d.plan.start)||!re.test(d.plan.end)||!Array.isArray(d.comps)||!d.comps.length)return 'The file needs plan dates (YYYY-MM-DD) and at least one funding.';
+  var map={},comps=[],lines=[];
+  d.comps.forEach(function(c){var id=uid();map[c.id||c.name]=id;comps.push({id:id,name:String(c.name||'Funding'),months:+c.months||3,amts:(c.amts||[]).map(Number).filter(isFinite),cats:Array.isArray(c.cats)?c.cats:[]})});
+  (d.lines||[]).forEach(function(l){var cid=map[l.comp];if(!cid)return;var nl={id:uid(),comp:cid,name:String(l.name||'Support'),code:l.code||'',cat:l.cat||'',rate:+l.rate||0,total:+l.total||0};gfill(nl);lines.push(nl)});
+  archiveCurrent();S.plan={start:d.plan.start,end:d.plan.end};S.comps=comps;S.lines=lines;S.inv=[];save();return '';
+}
+function newPlanCards(){
+  var past=S.archive||[],h='<details class="card acc" data-o="np"><summary><span class="ttl">🆕 Start a new plan</span><span class="chev">▾</span></summary><p class="hint">Your current plan and invoices are saved under Past plans, then you can start fresh.</p><button class="full sec2" data-act="newblank">'+(pend==='nb'?'Tap again to save this plan and start blank':'Start a blank plan')+'</button><div class="sec">Read a plan PDF</div><input type="file" id="pdf-file" accept=".pdf,application/pdf"><div id="pdf-res" class="sm" style="margin-top:8px"></div><div class="sec">Or import a plan file</div><input type="file" id="np-file" accept=".json,application/json"><label>Plan text (filled from the file, or paste it here)</label><textarea id="np-text" rows="4"></textarea><button class="full" data-act="doimport">Import plan</button><div id="np-msg" class="sm" style="color:var(--bad);margin-top:8px"></div><p class="hint">No import file? Ask Claude to turn your new NDIS plan PDF into one for this app.</p></details>';
+  if(past.length)h+='<details class="card acc" data-o="past"><summary><span class="ttl">📚 Past plans ('+past.length+')</span><span class="chev">▾</span></summary>'+past.map(function(a){return '<div class="ln"><b>'+dr(a.plan)+'</b><div class="sm">'+money(sum(a.comps.map(function(c){return sum(c.amts)})))+' funding · '+money(sum(a.inv.map(function(i){return +i.amt||0})))+' invoiced · '+a.inv.length+' invoices</div></div>'}).join('')+'</details>';
+  return h;
+}
+function compCats(c){
+  if(!c)return [];
+  if(c.cats&&c.cats.length)return c.cats;
+  var nm=String(c.name||'').toLowerCase(),out=[];
+  Object.keys(CATS).forEach(function(k){if(nm.indexOf(CATS[k].toLowerCase())>=0)out.push(CATS[k])});
+  if(/plan management|choice and control/.test(nm)&&out.indexOf('Choice and Control')<0)out.push('Choice and Control');
+  return out;
+}
+var STOPW={and:1,the:1,with:1,for:1,per:1};
+function toks(s){var o=[],seen={};String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').split(' ').forEach(function(w){if(w.length<3||STOPW[w])return;w=w.replace(/s$/,'').slice(0,6);if(!seen[w]){seen[w]=1;o.push(w)}});return o}
+function irate(it,region){if(it.r!=null)return it.r;var p=it.p||{};return p[region||'National']||p.National||0}
+function suggest(l,items,max,region){
+  var c=S.comps.find(function(x){return x.id===l.comp}),cs=(compCats(c)).map(function(k){return k.toLowerCase()}),
+    lt=toks(String(l.name||'').replace(/– general$/,'').replace(/^assessment recommendation therapy or training\s*-?\s*/i,'')),res=[],lr=+l.rate||0;
+  if(!lt.length)return res;
+  items.forEach(function(it){
+    var tk={},m=0;toks(it.t).forEach(function(w){tk[w]=1});lt.forEach(function(w){if(tk[w])m++});
+    var f=m/lt.length;if(f<0.5)return;
+    if(cs.length&&!it.h){var x=(it.c||'').toLowerCase();if(x&&!cs.some(function(k){return x.indexOf(k)>=0||k.indexOf(x)>=0}))return}
+    var sc=f,ir=irate(it,region);if(it.h)sc+=0.8;
+    if(lr&&ir&&Math.abs(ir/lr-1)<=0.12)sc+=0.25;
+    if(/standard/i.test(it.t))sc+=0.02;
+    if(/daytime/i.test(it.t))sc+=0.02;
+    sc-=it.t.length/10000;
+    res.push({it:it,f:f,sc:sc});
+  });
+  res.sort(function(a,b){return b.sc-a.sc});
+  return res.slice(0,max);
+}
+function pickBtn(l,it){
+  return '<button class="pick'+(l.code===it.n?' on':'')+'" data-act="setcode" data-id="'+l.id+'" data-n="'+esc(it.n)+'"><b>'+(l.code===it.n?'✓ ':'')+esc(it.t)+'</b><span class="sm">'+esc(it.n)+(it.c?' · '+esc(it.c):'')+' · '+(it.r?money(it.r)+' per '+esc(it.u||'unit'):'no price')+'</span></button>';
+}
+function lmHtml(l,q){
+  if(!GUIDE)return '';
+  var qq=(q||'').trim().toLowerCase(),list,head='';
+  if(qq.length<2){list=suggest(l,GUIDE.items,4).map(function(x){return x.it});head=list.length?'Suggested from your price guide. Check before using:':'No suggestion. Type to search your price guide.'}
+  else{
+    var c=S.comps.find(function(x){return x.id===l.comp}),cs=(compCats(c)).map(function(k){return k.toLowerCase()});
+    list=GUIDE.items.filter(function(it){
+      if((it.t+' '+it.n).toLowerCase().indexOf(qq)<0)return false;
+      if(cs.length){var x=(it.c||'').toLowerCase();return !x||cs.some(function(k){return x.indexOf(k)>=0||k.indexOf(x)>=0})}
+      return true}).slice(0,12);
+    head=list.length?'':'No matches in your price guide.';
+  }
+  return (head?'<div class="sm" style="margin-bottom:4px">'+head+'</div>':'')+list.map(function(it){return pickBtn(l,it)}).join('');
+}
+function pgAddedHtml(cid){
+  return PGNEW.map(function(id){return S.lines.find(function(l){return l.id===id})}).filter(function(l){return l&&l.comp===cid}).map(function(l){
+    return '<div class="ln"><b>'+esc(l.name)+'</b><div class="sm">'+esc(l.code)+(+l.rate?' · max '+money(l.rate)+'/h':'')+'</div><label>Allocated in your plan ($, whole plan)</label><input type="number" step="any" inputmode="decimal" data-t="lines" data-id="'+l.id+'" data-k="total" value="'+esc(l.total||'')+'"></div>'}).join('');
+}
+function pgAddCard(){
+  if(!S.comps.length)return '';
+  var head='<details class="card acc" data-o="pgadd"><summary><span><span class="ttl">🔎 Add item numbers</span><div class="sm">From your price guide</div></span><span class="chev">▾</span></summary>';
+  if(!GUIDE)return head+'<p class="hint">Upload a price guide first (Plan tab, Price guide).</p></details>';
+  var cats=[];GUIDE.items.forEach(function(it){if(it.c&&cats.indexOf(it.c)<0)cats.push(it.c)});cats.sort();
+  var cid=PGC&&S.comps.some(function(c){return c.id===PGC})?PGC:S.comps[0].id;PGC=cid;
+  return head+'<label>Add to funding</label><select id="pg-comp">'+S.comps.map(function(c){return '<option value="'+c.id+'"'+(c.id===cid?' selected':'')+'>'+esc(c.name)+'</option>'}).join('')+'</select><div id="pg-alloc" class="sm" style="margin-top:6px">'+allocText(cid)+'</div>'+
+  '<label>Category</label><select id="pg-cat"><option value="auto">This funding’s categories</option><option value="all">All categories</option>'+cats.map(function(k){return '<option>'+esc(k)+'</option>'}).join('')+'</select>'+
+  '<label>Search by name or item number (optional)</label><input id="pg-q" placeholder="e.g. weekday daytime" autocomplete="off">'+
+  '<div id="pg-added" class="sm" style="margin-top:8px;color:var(--ok)"></div><div id="pg-new">'+pgAddedHtml(cid)+'</div>'+
+  '<div id="pg-res" class="sm" style="margin-top:8px">Choose a category, or type to search. Tap an item to add it, then enter the amount your plan allocates to it.</div></details>';
+}
+function itemsListHtml(cid){
+  var ls=S.lines.filter(function(l){return l.comp===cid&&!isGen(l)&&PGNEW.indexOf(l.id)<0});
+  if(!ls.length)return '<p class="hint">No items yet. Add them from the price guide below.</p>';
+  return ls.map(function(l){
+    var g=l.code?gfind(l.code,''):null,h='<div class="ln"><b>'+esc(l.name)+'</b>';
+    if(l.code)h+='<div class="sm" style="color:var(--ok);margin-top:2px">✓ '+esc(l.code)+(g?' · '+esc(g.t):'')+' <button class="x" data-act="clearcode" data-id="'+l.id+'">Change</button></div>';
+    else h+='<div class="sm neg" style="margin-top:2px">⚠ no item number yet</div>'+(GUIDE?'<div id="lm-'+l.id+'" style="margin-top:6px">'+lmHtml(l,'')+'</div><input data-lm="'+l.id+'" placeholder="Search for a different item" autocomplete="off" style="margin-top:6px">':'');
+    h+=partsHtml(l)+'<label>Allocated in your plan ($, whole plan)</label><input type="number" step="any" inputmode="decimal" data-t="lines" data-id="'+l.id+'" data-k="total" value="'+esc(l.total||'')+'">';
+    return h+'</div>';
+  }).join('');
+}
+function itemsCard(){
+  var real=S.lines.filter(function(l){return !isGen(l)}),got=real.filter(function(l){return l.code}).length;
+  var face='<details class="card acc" data-o="items"><summary><span><span class="ttl">🧩 Item numbers by funding</span><div class="sm">'+got+' of '+real.length+' items have an item number</div></span><span class="chev">▾</span></summary>';
+  if(scr!=='items')return face+'</details>';
+  if(!S.comps.length)return face+'<p class="hint">Add a funding first.</p></details>';
+  if(!FSEL||!S.comps.some(function(c){return c.id===FSEL})){
+    var h=face+'<p class="hint">Pick a funding, then choose its item numbers from the price guide and enter what your plan allocates to each.</p>';
+    S.comps.forEach(function(c){
+      var ls=S.lines.filter(function(l){return l.comp===c.id&&!isGen(l)}),g=ls.filter(function(l){return l.code}).length;
+      h+='<button class="pick" data-act="fsel" data-id="'+c.id+'"><b>'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</b><span class="sm">'+g+' of '+ls.length+' items have an item number</span><span class="sm">'+allocText(c.id)+'</span></button>';
+    });
+    return h+'</details>';
+  }
+  var c=S.comps.find(function(x){return x.id===FSEL}),cats=[];
+  var h2=face+'<div class="sec" style="margin-top:6px">'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</div><div id="pg-alloc" class="sm">'+allocText(c.id)+'</div><input type="hidden" id="pg-comp" value="'+c.id+'">'+
+    '<div class="sec">Items in this funding</div><div id="fi-items">'+itemsListHtml(c.id)+'</div>';
+  if(!GUIDE)return h2+'<p class="hint">Upload a price guide (Plan setup, Price guide) to choose item numbers from it.</p><button class="full sec2" data-act="addline" data-id="'+c.id+'">+ Blank support line</button></details>';
+  GUIDE.items.forEach(function(it){if(it.c&&cats.indexOf(it.c)<0)cats.push(it.c)});cats.sort();
+  return h2+'<div class="sec">Add from the price guide</div><div id="pg-new">'+pgAddedHtml(c.id)+'</div><div id="pg-added" class="sm" style="color:var(--ok)"></div>'+
+    '<label>Category</label><select id="pg-cat"><option value="auto">This funding’s categories</option><option value="all">All categories</option>'+cats.map(function(k){return '<option>'+esc(k)+'</option>'}).join('')+'</select>'+
+    '<label>Search by name or item number (optional)</label><input id="pg-q" placeholder="e.g. weekday daytime" autocomplete="off">'+
+    '<div id="pg-res" class="sm" style="margin-top:8px"></div><button class="full sec2" style="margin-top:14px" data-act="addline" data-id="'+c.id+'">+ Blank support line</button></details>';
+}
+function matchCard(){
+  var real=S.lines.filter(function(l){return !isGen(l)}),got=real.filter(function(l){return l.code}).length;
+  var face='<details class="card acc" data-o="match"><summary><span><span class="ttl">🔗 Match item numbers</span><div class="sm">'+got+' of '+real.length+' plan supports have an item number</div></span><span class="chev">▾</span></summary>';
+  if(scr!=='match')return face+'</details>';
+  if(!GUIDE)return face+'<p class="hint">Upload a price guide first (Plan tab, Price guide), then come back here.</p></details>';
+  var h=face+'<p class="hint">Grouped like your Summary. Tap a suggestion to set a support’s item number. Suggestions come from the price guide you stored, so tick the supports your plan uses when you upload it. Check each one before using it.</p>';
+  S.comps.forEach(function(c){
+    var ls=real.filter(function(l){return l.comp===c.id});if(!ls.length)return;
+    h+='<div class="sec">'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</div>';
+    ls.forEach(function(l){
+      var g=l.code?gfind(l.code,''):null;
+      h+='<div class="ln"><b>'+esc(l.name)+'</b><div class="sm">Allocated '+money(ltotal(l))+(+l.rate?' · plan rate '+money(l.rate)+'/h':'')+'</div>';
+      if(l.code)h+='<div class="sm" style="color:var(--ok);margin-top:4px">✓ '+esc(l.code)+(g?' · '+esc(g.t):'')+' <button class="x" data-act="clearcode" data-id="'+l.id+'">Change</button></div>';
+      else{var sg=suggest(l,GUIDE.items,3);h+=sg.length?sg.map(function(x){return pickBtn(l,x.it)}).join(''):'<div class="hint">No suggestion in your price guide. Open this support in the list to search.</div>'}
+      h+='</div>';
+    });
+  });
+  return h+'</details>';
+}
+function fundingCard(c){
+  return '<details class="card acc" data-o="p'+c.id+'"'+(OPEN['p'+c.id]?' open':'')+'><summary><span><span class="ttl">Funding: '+esc(c.name)+'</span><div class="sm">'+allocText(c.id)+'</div></span><span class="chev">▾</span></summary><label>Name</label><input data-t="comps" data-id="'+c.id+'" data-k="name" value="'+esc(c.name)+'"><label>Months per funding period</label><select data-t="comps" data-id="'+c.id+'" data-k="months">'+[1,3,6,12].map(function(m){return '<option value="'+m+'"'+(c.months===m?' selected':'')+'>'+m+'</option>'}).join('')+'</select>'+
+    '<label>Amount for each period, in order (comma separated)</label><textarea rows="3" data-t="comps" data-id="'+c.id+'" data-k="amts">'+esc(c.amts.join(', '))+'</textarea><button class="full sec2" data-act="delcomp" data-id="'+c.id+'">'+(pend===c.id?'Tap again – also removes its lines and invoices':'Remove this funding')+'</button></details>';
+}
+function lineCard(l){
+  var gen=isGen(l);
+  return '<details class="card acc" data-o="p'+l.id+'"'+(OPEN['p'+l.id]?' open':'')+'><summary><span><span class="ttl">'+esc(l.name)+'</span><div class="sm">'+(l.code?esc(l.code):'<span class="neg">⚠ no item number</span>')+' · '+money(ltotal(l))+(gen?' unallocated':' allocated')+(+l.rate?' · max '+money(l.rate)+'/h':'')+'</div></span><span class="chev">▾</span></summary>'+
+    '<label>Name</label><input data-t="lines" data-id="'+l.id+'" data-k="name" value="'+esc(l.name)+'">'+
+    '<label>Support item number</label><input data-t="lines" data-id="'+l.id+'" data-k="code" value="'+esc(l.code||'')+'">'+
+    '<div class="sec">Choose from your price guide</div>'+(GUIDE?'<input data-lm="'+l.id+'" placeholder="Search name or item number" autocomplete="off"><div id="lm-'+l.id+'" style="margin-top:6px">'+lmHtml(l,'')+'</div>':'<p class="hint">Upload a price guide to pick item numbers from it.</p>')+
+    '<div class="sec">Hours through the plan</div>'+((l.parts||[]).map(function(p,i){return '<div class="ln" style="margin-top:6px;padding-top:6px"><div class="grid"><div><label>Hours</label><input type="number" step="any" inputmode="decimal" data-pt="'+l.id+'|'+i+'|h" value="'+esc(p.h)+'"></div><div><label>Per</label><select data-pt="'+l.id+'|'+i+'|u">'+['week','month','year','day'].map(function(u){return '<option'+(p.u===u?' selected':'')+'>'+u+'</option>'}).join('')+'</select></div></div><label>For how many '+esc(p.u)+'s</label><input type="number" step="any" inputmode="decimal" data-pt="'+l.id+'|'+i+'|n" value="'+esc(p.n)+'"><button class="x" data-act="delpart" data-id="'+l.id+'" data-i="'+i+'">Remove this row</button></div>'}).join(''))+(l.parts&&l.parts.length?'<div class="sm">Total '+hrs(partsHours(l))+' · allocated amount is hours × max rate</div>':'<div class="hint">Add the hours your plan allows, for example 10 hours per week for 52 weeks.</div>')+'<button class="full sec2" data-act="addpart" data-id="'+l.id+'">+ Add hours row</button>'+
+    '<label>Support category (optional)</label><input data-t="lines" data-id="'+l.id+'" data-k="cat" value="'+esc(l.cat||'')+'">'+
+    '<label>Funding</label><select data-t="lines" data-id="'+l.id+'" data-k="comp">'+S.comps.map(function(c){return '<option value="'+c.id+'"'+(l.comp===c.id?' selected':'')+'>'+esc(c.name)+'</option>'}).join('')+'</select>'+
+    '<div class="grid"><div><label>Max rate ($/h, 0 if none)</label><input type="number" step="any" inputmode="decimal" data-t="lines" data-id="'+l.id+'" data-k="rate" value="'+esc(l.rate)+'"></div>'+(gen?'<div><label>Plan total ($)</label><div class="sm" style="padding:10px 0">Automatic: '+money(ltotal(l))+'</div></div>':'<div><label>Allocated in plan ($)</label><input type="number" step="any" inputmode="decimal" data-t="lines" data-id="'+l.id+'" data-k="total" value="'+esc(l.total)+'"></div>')+'</div>'+
+    (gen?'<p class="hint">This is the part of the funding not yet given to an item number. It shrinks automatically as you allocate amounts to items.</p>':'')+
+    '<button class="full sec2" data-act="delline" data-id="'+l.id+'">'+(pend===l.id?'Tap again – also removes its invoices':'Remove this line')+'</button></details>';
+}
+function planView(){
+  var h='<h1>⚙️ Plan setup</h1>'+(!S.comps.length?'<p class="hint">New plan: set the plan dates, then add each funding below, or read a plan PDF.</p>':(S.lines.length&&S.lines.every(isGen)?'<p class="hint">Funding loaded. Each funding has a “general” support so you can add invoices straight away. Open “Item numbers by funding” to choose item numbers from your price guide and enter what the plan allocates to each. The general support keeps whatever is left.</p>':''))+wzCard()+newPlanCards()+pgCard()+bdCard()+(scr==='pgview'?pgViewCard():'')+(scr==='pgsel'?pgSelCard():'')+itemsCard()+backupCard()+'<details class="card acc" data-o="pd"><summary><span class="ttl">📅 Plan dates</span><span class="chev">▾</span></summary><div class="grid"><div><label>Start</label><input type="date" data-plan="start" value="'+esc(S.plan.start)+'"></div><div><label>End</label><input type="date" data-plan="end" value="'+esc(S.plan.end)+'"></div></div></details>';
+  S.comps.forEach(function(c){
+    h+='<div class="sec" style="margin-top:22px">'+(EM[c.id]||'⭐')+' '+esc(c.name)+'</div>'+fundingCard(c);
+    S.lines.filter(function(l){return l.comp===c.id}).forEach(function(l){h+=lineCard(l)});
+    h+='<div class="grid"><button class="sec2" data-act="addfrom" data-id="'+c.id+'">🧩 Item numbers for this funding</button><button class="sec2" data-act="addline" data-id="'+c.id+'">+ Blank support line</button></div>';
+  });
+  return h+'<button class="full sec2" style="margin-top:20px" data-act="addcomp">+ Add funding</button>';
+}
+
+
+var VERSION='2.9',LOG=[
+['2.9','25 Nov 2026',['Auto-update (Android app): save a web address on the About screen and the app checks for a newer version each time it opens','The app now needs permission to use the internet, only for the update check and the PDF reader fallback']],
+['2.8','24 Nov 2026',['New “Set up from my documents”: upload your plan PDF, plan breakdown and price guide, tap one button, and the app creates the funding periods, every item with its amount, hours and item number, and starts tracking spending','A summary of what was set up appears on the Summary screen']],
+['2.7','24 Nov 2026',['Highlight items in your price guide PDF and the app ticks them for you when you upload it','New “Read plan breakdown” (Word or PDF): sets up every item with its amount, hours per week through the plan and item number','Items show their hours per week, and what has been used this week','Hours rows can be edited on each item']],
+['2.6','24 Nov 2026',['New “Item numbers by funding” section in Plan setup: pick a funding such as Core Flexible, then choose its item numbers from the price guide and enter the amount allocated','Price guide section is now just for uploading and viewing the whole guide','Removed the separate Match item numbers screen; suggestions now appear next to each item']],
+['2.5','24 Nov 2026',['Summary shows what is left this pay period and in the whole plan for every category, in money and hours','Plan items grouped by category with their allocated amounts, and item numbers added from the price guide with an allocation','Match item numbers screen suggests the price guide item for each plan support','Adding an invoice shows exactly what was deducted and what is left']],
+['2.4','23 Nov 2026',['Upload a price guide, then choose the supports and National, Remote or Very Remote prices; only your choices are stored','Upload new price guide and View whole price guide buttons']],
+['2.3','23 Nov 2026',['Android project now downloads the two PDF reading files by itself on the first build']],
+['2.2','23 Nov 2026',['Load a new price guide each year, then apply the new rates to the current plan only','Choose the supports (codes) a plan uses, by category or search, adding several in a row','Invoices now pick the support from a dropdown of the plan\u2019s codes']],
+['2.1','23 Nov 2026',['Fixed an error when loading the pricing schedule PDF on the phone']],
+['2.0','10 Nov 2026',['Price guide can now be loaded from the NDIS Pricing Schedule PDF','National, Remote and Very Remote price columns']],
+['1.9','10 Nov 2026',['Read a new plan PDF in the app to set up the funding, periods and amounts','Price guide search is limited to each funding’s support categories']],
+['1.8','10 Nov 2026',['Price guide: load the NDIS support catalogue (CSV) to fill item numbers, categories and maximum rates','Add supports to a plan straight from the price guide','Imported plans are matched to the price guide automatically','Supports grouped by category on the Summary']],
+['1.7','10 Nov 2026',['Bottom bar now sits above the phone’s navigation bar','Backup and restore of all plan data, with a saved backup file']],
+['1.6','10 Nov 2026',['Tap the version number on the main screen to open About','Start a new plan: saves the old plan to Past plans, then start blank or import a plan file','Import a plan file with its funding, amounts and supports']],
+['1.5','10 Nov 2026',['Version number shown under the My NDIS Plan title','About screen shows the latest changes, with a button for previous versions']],
+['1.4','10 Nov 2026',['Choose the support from a visible list when adding an invoice','Optional support item number on each support line']],
+['1.3','10 Nov 2026',['Each section opens on its own screen with a Back button, and the Android back button works too']],
+['1.2','10 Nov 2026',['Every section is now a tap-to-open button that expands and collapses']],
+['1.1','10 Nov 2026',['About screen with the version number and this changelog']],
+['1.0','10 Nov 2026',['Android app version that works offline','Brighter, more colourful look','Hours remaining card on the Summary tab','Funding periods with rollover of unused money and hours','Your plan and support lines preloaded','Invoice tracking at the amount actually charged']]];
+function logEntry(v){return '<div style="margin-top:8px"><b>Version '+v[0]+'</b> <span class="sm">'+v[1]+'</span><ul style="margin:6px 0 0;padding-left:20px">'+v[2].map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul></div>'}
+function updCard(){
+  if(!(window.Android&&Android.setUpdateUrl))return '';
+  var u='';try{u=Android.getUpdateUrl()||''}catch(e){}
+  return '<div class="card"><div class="ttl">🔄 Auto-update</div><p class="hint">Paste the web address where the latest app page is hosted. Each time you open the app it checks for a newer version and downloads it. Close and reopen the app to use it. Your data stays on the phone. Make a backup first the very first time.</p><label>Update address</label><input id="upd-url" placeholder="https://yourname.github.io/ndis-tracker/index.html" value="'+esc(u)+'" autocomplete="off"><button class="full" style="margin-top:10px" data-act="updsave">Save and check now</button><div id="upd-msg" class="sm" style="margin-top:8px"></div></div>';
+}
+function aboutView(){
+  return '<h1>ℹ️ About</h1><div class="card"><div class="ttl">NDIS Plan Tracker</div><div class="sm">Version '+VERSION+'</div><p class="hint">Tracks invoices against your plan’s funding periods and shows money and hours remaining, with rollover. The figures come from what you enter, so check them against your plan manager’s statements.</p></div>'+updCard()+'<div class="card"><div class="ttl">Latest changes</div>'+logEntry(LOG[0])+'</div>'+(LOG.length>1?'<details class="card acc" data-o="log"><summary><span class="ttl">Previous versions</span><span class="chev">▾</span></summary>'+LOG.slice(1).map(function(v){return '<div class="ln"><b>Version '+v[0]+'</b> <span class="sm">'+v[1]+'</span><ul style="margin:6px 0 0;padding-left:20px">'+v[2].map(function(x){return '<li>'+x+'</li>'}).join('')+'</ul></div>'}).join('')+'</details>':'');
+}
+function render(){
+  var app=$('#app');app.innerHTML=tab==='sum'?sumView():tab==='inv'?invView():tab==='about'?aboutView():planView();
+  var keep=null;
+  app.querySelectorAll('details.acc').forEach(function(d){if(scr&&d.dataset.o===scr)keep=d;else d.open=false});
+  if(scr){if(keep){keep.open=true;keep.classList.add('scr');app.innerHTML='<button class="sec2 back" data-act="back">← Back</button>';app.appendChild(keep)}else scr=null}
+  if(scr==='items'&&FSEL&&GUIDE)pgSearch(($('#pg-q')||{}).value||'');
+  if(NOTE&&tab==='sum'&&!scr){app.insertAdjacentHTML('afterbegin','<div class="card" style="border-color:var(--ok)"><b style="color:var(--ok)">✅ Plan set up</b><div class="sm" style="margin-top:6px">'+NOTE+'</div><button class="x" data-act="dismissnote">Dismiss</button></div>')}
+  document.querySelectorAll('nav button').forEach(function(b){b.classList.toggle('on',b.dataset.tab===tab)});
+}
+function save(){
+  clearTimeout(timer);
+  timer=setTimeout(function(){
+    try{localStorage.setItem('ndis2',JSON.stringify(S))}catch(e){}
+    if(window.__ref){try{window.__ref.set({json:JSON.stringify(S)}).catch(function(){})}catch(e){}}
+  },400);
+}
+
+function autoAmt(){var l=S.lines.find(function(x){return x.id===$('#f-line').value}),h=parseFloat($('#f-hours').value);if(l&&+l.rate&&h)$('#f-amt').value=Math.round(h*l.rate*100)/100}
+window.goBack=function(){if(scr==='items'&&FSEL){FSEL=null;PGNEW=[];render();window.scrollTo(0,0);return true}if(scr==='pgview'||scr==='pgsel'){scr='pg';render();window.scrollTo(0,0);return true}if(scr){scr=null;pend=null;render();window.scrollTo(0,0);return true}if(tab!=='sum'){tab='sum';render();return true}return false};
+document.addEventListener('click',function(e){
+  if(e.target.closest('[data-act="back"]')){window.goBack();return}
+  var s=e.target.closest('details.acc>summary');
+  if(s){e.preventDefault();var d=s.parentNode;if(!d.classList.contains('scr')){scr=d.dataset.o;if(scr==='items'){FSEL=null;PGNEW=[]}render();window.scrollTo(0,0)}}
+});
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button');if(!t)return;
+  if(t.dataset.tab){tab=t.dataset.tab;scr=null;pend=null;render();window.scrollTo(0,0);return}
+  var a=t.dataset.act,id=t.dataset.id;
+  if(a==='addcomp'){S.comps.push({id:uid(),name:'New funding',months:3,amts:rep(12,0)});save();render()}
+  else if(a==='addline'){if(!S.comps.length)return;var cid0=id&&S.comps.some(function(c){return c.id===id})?id:S.comps[0].id,nl0={id:uid(),comp:cid0,name:'New support',code:'',cat:'',rate:0,total:0};S.lines.push(nl0);save();scr='p'+nl0.id;OPEN['p'+nl0.id]=1;render();window.scrollTo(0,0)}
+  else if(a==='delcomp'||a==='delline'||a==='del'){
+    if(pend!==id){pend=id;render();return}
+    if(a==='delcomp'){var ids=S.lines.filter(function(l){return l.comp===id}).map(function(l){return l.id});S.comps=S.comps.filter(function(c){return c.id!==id});S.lines=S.lines.filter(function(l){return l.comp!==id});S.inv=S.inv.filter(function(i){return ids.indexOf(i.line)<0})}
+    else if(a==='delline'){S.lines=S.lines.filter(function(l){return l.id!==id});S.inv=S.inv.filter(function(i){return i.line!==id})}
+    else S.inv=S.inv.filter(function(i){return i.id!==id});
+    pend=null;save();render();
+  }else if(a==='pdfapply'){
+    if(!PENDING)return;
+    archiveCurrent();S.plan=PENDING.plan;S.comps=PENDING.comps;
+    S.lines=PENDING.comps.map(function(c){return {id:uid(),comp:c.id,name:c.name+' – general',code:'',cat:'',rate:0,total:sum(c.amts)}});
+    S.inv=[];PENDING=null;save();tab='plan';scr=null;pend=null;render();window.scrollTo(0,0);
+  }else if(a==='addpart'||a==='delpart'){
+    var pl2=S.lines.find(function(x){return x.id===id});if(!pl2)return;pl2.parts=pl2.parts||[];
+    if(a==='addpart')pl2.parts.push({h:1,u:'week',n:52,ratio:''});else pl2.parts.splice(+t.dataset.i,1);
+    recalcParts(pl2);save();render()
+  }else if(a==='updsave'){var uu=($('#upd-url').value||'').trim();if(uu&&!/^https:\/\//i.test(uu)){$('#upd-msg').textContent='The address must start with https://';return}$('#upd-msg').textContent=uu?'Saved. Checking for an update...':'Saved: auto-update is off.';Android.setUpdateUrl(uu);if(uu)Android.checkUpdate()
+  }else if(a==='dismissnote'){NOTE='';render()
+  }else if(a==='wzplan'){$('#wz-plan').click()
+  }else if(a==='wzbd'){$('#wz-bd').click()
+  }else if(a==='wzpg'){$('#wz-pg').click()
+  }else if(a==='wzgo'){
+    if(pend!=='wz'&&WZ.plan&&(S.comps.length||S.inv.length)){pend='wz';t.textContent='Tap again to confirm';return}
+    var nt=wzCreate();pend=null;NOTE=nt.join('<br>');tab='sum';scr=null;render();window.scrollTo(0,0)
+  }else if(a==='bdupload'){$('#bd-file').click()
+  }else if(a==='bdapply'){
+    if(!BD||!BD.groups)return;
+    if(pend!=='bd'){pend='bd';t.textContent='Tap again to replace the items shown';return}
+    var bm=applyBreakdown();pend=null;BD=null;tab='plan';scr='items';FSEL=null;PGNEW=[];render();window.scrollTo(0,0);setTimeout(function(){var z=$('#app');if(z){var pz=document.createElement('p');pz.className='hint';pz.style.color='var(--ok)';pz.textContent=bm;z.insertBefore(pz,z.children[1]||null)}},0)
+  }else if(a==='pgupload'){$('#pg-file').click()
+  }else if(a==='pgview'){scr='pgview';render();window.scrollTo(0,0)
+  }else if(a==='pgresume'){scr='pgsel';render();window.scrollTo(0,0)
+  }else if(a==='pgseltoggle'){
+    var tn=t.dataset.n,on=!STAGE.sel[tn];if(on)STAGE.sel[tn]=1;else delete STAGE.sel[tn];
+    t.classList.toggle('on',on);var tb=t.querySelector('b');tb.textContent=(on?'\u2713 ':'')+tb.textContent.replace(/^\u2713 /,'');$('#ps-count').textContent=psCountText();
+  }else if(a==='pgselall'||a==='pgselnone'){
+    psFiltered().forEach(function(it){if(a==='pgselall')STAGE.sel[it.n]=1;else delete STAGE.sel[it.n]});psRefresh();
+  }else if(a==='pgselapply'){
+    var m5=applyStage();if(m5){$('#ps-msg').textContent=m5;return}
+    var n5=GUIDE.items.length;STAGE=null;scr='pg';render();window.scrollTo(0,0);
+    var pm5=$('#pg-msg');if(pm5){pm5.style.color='var(--ok)';pm5.textContent='Added '+n5+' support'+(n5===1?'':'s')+' to the app ('+GUIDE.state+' prices).'}
+  }else if(a==='addfrom'||a==='fsel'){PGC=id;FSEL=id;PGNEW=[];scr='items';render();window.scrollTo(0,0)
+  }else if(a==='setcode'){
+    var ln=S.lines.find(function(x){return x.id===id}),it2=GUIDE&&GUIDE.items.find(function(x){return x.n===t.dataset.n});if(!ln||!it2)return;
+    ln.code=it2.n;if(it2.c)ln.cat=it2.c;if(!(+ln.rate)&&it2.r)ln.rate=it2.r;save();render();
+  }else if(a==='clearcode'){var ln2=S.lines.find(function(x){return x.id===id});if(ln2){ln2.code='';save();render()}
+  }else if(a==='pgfill'){
+    var n=0;S.lines.forEach(function(l){var g=gfind(l.code,l.name);if(g&&g.r){if(!l.code)l.code=g.n;if(!l.cat)l.cat=g.c;if(!(+l.rate)||Math.abs(l.rate-g.r)>=0.005){n++;l.rate=g.r}}});
+    save();render();var pm=$('#pg-msg');if(pm){pm.style.color='var(--ok)';pm.textContent=n+' rate'+(n===1?'':'s')+' updated in your current plan.'}
+  }else if(a==='pgpick'){
+    var it=GUIDE.items.find(function(x){return x.n===t.dataset.n}),cid=$('#pg-comp').value,pa=$('#pg-added');if(!it||!cid)return;
+    if(S.lines.some(function(l){return l.comp===cid&&l.code===it.n})){pa.style.color='var(--mu)';pa.textContent='Already in this funding.';return}
+    var nl={id:uid(),comp:cid,name:it.t,code:it.n,cat:it.c,rate:it.r,total:0};S.lines.push(nl);PGNEW.push(nl.id);save();
+    pa.style.color='var(--ok)';pa.textContent='Added: '+it.t+'. Enter its allocated amount below.';
+    $('#pg-new').innerHTML=pgAddedHtml(cid);$('#pg-alloc').innerHTML=allocText(cid);pgSearch($('#pg-q').value);var ai=$('#pg-new input');if(ai){try{ai.scrollIntoView({block:'center'});ai.focus()}catch(e){}}
+  }else if(a==='savebk'){
+    var txt=backupText(),fn='ndis-backup-'+fd(today())+'.json';
+    if(window.Android&&Android.saveBackup){Android.saveBackup(txt,fn);$('#bk-msg').textContent='Choose where to save the file.'}
+    else{try{var bl=new Blob([txt],{type:'application/json'}),u=URL.createObjectURL(bl),a2=document.createElement('a');a2.href=u;a2.download=fn;document.body.appendChild(a2);a2.click();a2.remove();$('#bk-msg').textContent='Backup downloaded. If nothing happened, copy the text below.'}catch(x){$('#bk-msg').textContent='Copy the text below to keep your backup.'}}
+  }else if(a==='restore'){
+    var chk=parseBackup($('#rb-text').value);if(typeof chk==='string'){$('#rb-msg').textContent=chk;return}
+    if(pend!=='rs'){pend='rs';t.textContent='Tap again to replace everything with this backup';return}
+    S=chk;pend=null;scr=null;tab='sum';save();render();window.scrollTo(0,0);
+  }else if(a==='about'){tab='about';scr=null;pend=null;render();window.scrollTo(0,0)}
+  else if(a==='newblank'){
+    if(pend!=='nb'){pend='nb';render();return}
+    archiveCurrent();S.plan={start:'',end:''};S.comps=[];S.lines=[];S.inv=[];pend=null;scr=null;save();render();window.scrollTo(0,0);
+  }else if(a==='doimport'){
+    var m=importPlan($('#np-text').value);if(m){$('#np-msg').textContent=m;return}
+    tab='sum';scr=null;pend=null;render();window.scrollTo(0,0);
+  }else if(a==='pick'){$('#f-line').value=id;document.querySelectorAll('.pick').forEach(function(b){b.classList.toggle('on',b.dataset.id===id)});autoAmt()}else if(a==='addinv'){
+    var date=$('#f-date').value,line=$('#f-line').value,h=parseFloat($('#f-hours').value)||0,amt=parseFloat($('#f-amt').value)||0;
+    if(!date||!line||(!h&&!amt)){$('#msg').textContent='Pick a date and support, and enter hours or an amount.';return}
+    S.inv.push({id:uid(),date:date,line:line,hours:h,amt:amt,note:$('#f-note').value.trim()});
+    lastLine=line;save();render();invFeedback(line,date,h,amt);
+  }
+});
+document.addEventListener('toggle',function(e){var o=e.target.dataset&&e.target.dataset.o;if(o)OPEN[o]=e.target.open},true);
+document.addEventListener('input',function(e){
+  if(e.target.dataset&&e.target.dataset.lm){var lx=S.lines.find(function(x){return x.id===e.target.dataset.lm}),bx=$('#lm-'+e.target.dataset.lm);if(lx&&bx)bx.innerHTML=lmHtml(lx,e.target.value);return}
+  if(e.target.id==='pg-q'){pgSearch(e.target.value);return}
+  if(e.target.id==='ps-q'&&STAGE){STAGE.q=e.target.value;psRefresh();return}
+  if(e.target.id==='pgv-q'&&GUIDE){$('#pgv-list').innerHTML=pgViewHtml(e.target.value);return}
+  if(e.target.id==='f-hours'||e.target.id==='f-line'){
+    var l=S.lines.find(function(x){return x.id===$('#f-line').value}),h=parseFloat($('#f-hours').value);
+    if(l&&+l.rate&&h)$('#f-amt').value=Math.round(h*l.rate*100)/100;
+  }
+});
+document.addEventListener('change',function(e){
+  var t=e.target;
+  if(t.id==='pg-comp'||t.id==='pg-cat'){if(t.id==='pg-comp'){PGC=t.value;$('#pg-new').innerHTML=pgAddedHtml(t.value);$('#pg-alloc').innerHTML=allocText(t.value)}pgSearch($('#pg-q').value);return}
+  if(t.id==='ps-region'&&STAGE){STAGE.region=t.value;psRefresh();return}
+  if(t.id==='ps-cat'&&STAGE){STAGE.cat=t.value;psRefresh();return}
+  if(t.id==='wz-plan'||t.id==='wz-bd'||t.id==='wz-pg'){
+    var wf=t.files[0];t.value='';if(!wf)return;
+    var wm=$('#wz-msg');if(wm){wm.style.color='';wm.textContent='Reading '+wf.name+'...'}
+    var isP2=/\.pdf$/i.test(wf.name)||wf.type==='application/pdf',isW2=/\.docx$/i.test(wf.name),kind=t.id,job2;
+    if(kind==='wz-plan')job2=pdfText(wf).then(function(tx){var r=parsePlan(tx);if(r.err)throw new Error(r.err);WZ.plan=r;WZ.planName=wf.name});
+    else if(kind==='wz-bd')job2=(isW2?docxText(wf):isP2?pdfText(wf):wf.text()).then(function(tx){var r=parseBreakdown(tx);if(r.err)throw new Error(r.err);WZ.bd=tx;WZ.bdName=wf.name});
+    else job2=(isP2?pdfText(wf).then(function(tx){return parseSchedule(tx,wf.name)}):wf.text().then(function(tx){return parseCsvAll(tx,wf.name)})).then(function(m){if(m)throw new Error(m);WZ.pg=wf.name});
+    job2.then(function(){scr='wz';render();window.scrollTo(0,0)}).catch(function(e){var w2=$('#wz-msg');if(w2){w2.style.color='var(--bad)';w2.textContent='Could not read '+wf.name+': '+(e&&e.message?e.message:e)}});
+    return}
+  if(t.id==='bd-file'){var f4=t.files[0];if(f4){var bm=$('#bd-msg');bm.style.color='';bm.textContent='Reading the file...';
+    var isW=/\.docx$/i.test(f4.name),isP=/\.pdf$/i.test(f4.name)||f4.type==='application/pdf';
+    (isW?docxText(f4):isP?pdfText(f4):f4.text()).then(function(tx){var r5=parseBreakdown(tx);if(r5.err){bm.style.color='var(--bad)';bm.textContent=r5.err;return}BD=r5;pend=null;scr='bd';render();window.scrollTo(0,0)}).catch(function(e){bm.style.color='var(--bad)';bm.textContent='Could not read the file: '+(e&&e.message?e.message:e)})}
+    t.value='';return}
+  if(t.id==='pdf-file'){var f3=t.files[0];if(f3)readPdf(f3);return}
+  if(t.id==='pg-file'){var f2=t.files[0];if(f2){
+    var pm=$('#pg-msg'),isPdf=/\.pdf$/i.test(f2.name)||f2.type==='application/pdf';
+    pm.style.color='';pm.textContent=isPdf?'Reading the PDF...':'Reading the file...';
+    var job=isPdf?pdfText(f2).then(function(x){return parseSchedule(x,f2.name)}):new Promise(function(ok){var r2=new FileReader();r2.onload=function(){ok(parseCsvAll(r2.result,f2.name))};r2.readAsText(f2)});
+    job.then(function(m2){if(m2){pm.style.color='var(--bad)';pm.textContent=m2;return}scr='pgsel';render();window.scrollTo(0,0)}).catch(function(e){pm.style.color='var(--bad)';pm.textContent='Could not read the file: '+(e&&e.message?e.message:e)});
+  }return}
+  if(t.id==='np-file'||t.id==='rb-file'){var p=t.id==='np-file'?'np':'rb',f=t.files[0];if(f){var r=new FileReader();r.onload=function(){$('#'+p+'-text').value=r.result;$('#'+p+'-msg').textContent=(p==='np'?'File loaded. Tap Import plan.':'File loaded. Tap Restore backup.')};r.readAsText(f)}return}
+  if(t.dataset.plan){S.plan[t.dataset.plan]=t.value;save();return}
+  if(t.dataset.pt){var pa=t.dataset.pt.split('|'),pl=S.lines.find(function(x){return x.id===pa[0]}),pp=pl&&pl.parts&&pl.parts[+pa[1]];if(pp){pp[pa[2]]=pa[2]==='u'?t.value:(parseFloat(t.value)||0);recalcParts(pl);save();render()}return}
+  if(t.dataset.t){
+    var o=S[t.dataset.t].find(function(x){return x.id===t.dataset.id}),k=t.dataset.k;if(!o)return;
+    if(k==='amts')o.amts=t.value.split(/[\s,]+/).map(parseFloat).filter(isFinite);
+    else if(k==='months')o.months=+t.value;
+    else o[k]=t.type==='number'?(parseFloat(t.value)||0):t.value;
+    save();
+    if(k==='total'&&$('#pg-alloc')&&$('#pg-comp'))$('#pg-alloc').innerHTML=allocText($('#pg-comp').value);
+  }
+});
+
+try{var j=localStorage.getItem('ndis2');if(j)S=Object.assign(S,JSON.parse(j))}catch(e){}
+render();
+</script>
+</body>
+</html>
